@@ -1,19 +1,21 @@
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { playwrightLogin } from '@/lib/playwrightLogin';
+import { playwrightLogin } from '@/lib/playwrightLogin'; 
 
 export const AppMenu = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate(); 
 
   const handleLogin = async () => {
     const email = prompt('Enter your Poshmark email:');
     const password = prompt('Enter your Poshmark password:');
 
     if (email && password) {
-      const result = await playwrightLogin(email, password); // Pass email and password here
+      const result = await playwrightLogin(email, password); 
 
       if (result.success) {
         alert('Login successful!');
-        // Optionally, save session cookies here
+        navigate('/'); 
       } else {
         alert(`Login failed: ${result.error}`);
       }
@@ -33,6 +35,22 @@ export const AppMenu = () => {
             <button onClick={handleLogin} className="text-white">Login</button>
           )}
         </div>
+      </div>
+      <div className="mt-4">
+        <ul className="space-y-2">
+          <li>
+            <Link to="/" className="text-white hover:underline">Dashboard</Link>
+          </li>
+          <li>
+            <Link to="/share" className="text-white hover:underline">Share Management</Link>
+          </li>
+          <li>
+            <Link to="/profile" className="text-white hover:underline">User Profile</Link>
+          </li>
+          <li>
+            <Link to="/settings" className="text-white hover:underline">Settings</Link>
+          </li>
+        </ul>
       </div>
     </nav>
   );
