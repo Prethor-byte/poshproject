@@ -7,10 +7,23 @@ import { HomePage } from '@/pages/home';
 import { SharePage } from '@/pages/share';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
+import { LandingPage } from '@/pages/landing';
 
 export const router = createBrowserRouter([
   {
     path: '/',
+    element: <LandingPage />,
+  },
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+  },
+  {
+    path: '/dashboard',
     element: <Layout />,
     children: [
       {
@@ -30,13 +43,5 @@ export const router = createBrowserRouter([
         ),
       },
     ],
-  },
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
   },
 ]);
