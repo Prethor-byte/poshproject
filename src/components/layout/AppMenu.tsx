@@ -39,16 +39,16 @@ export const AppMenu = () => {
       <div className="mt-4">
         <ul className="space-y-2">
           <li>
-            <Link to="/" className="text-white hover:underline">Dashboard</Link>
+            <Link to="/app" className="text-white hover:underline">Dashboard</Link>
           </li>
           <li>
-            <Link to="/share" className="text-white hover:underline">Share Management</Link>
+            <Link to="/app/share" className="text-white hover:underline">Share Management</Link>
           </li>
           <li>
-            <Link to="/profile" className="text-white hover:underline">User Profile</Link>
+            <Link to="/app/profile" className="text-white hover:underline">User Profile</Link>
           </li>
           <li>
-            <Link to="/settings" className="text-white hover:underline">Settings</Link>
+            <Link to="/app/settings" className="text-white hover:underline">Settings</Link>
           </li>
         </ul>
       </div>

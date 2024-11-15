@@ -18,7 +18,7 @@ export function LoginPage() {
     try {
       const { error } = await signIn(email, password);
       if (error) throw error;
-      navigate('/');
+      navigate('/app'); // Redirect to the app dashboard
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {

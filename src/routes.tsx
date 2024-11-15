@@ -23,24 +23,28 @@ export const router = createBrowserRouter([
     element: <RegisterPage />,
   },
   {
-    path: '/dashboard',
-    element: <Layout />,
+    path: '/app',
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
-        element: (
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        ),
+        element: <HomePage />,
       },
       {
         path: 'share',
-        element: (
-          <ProtectedRoute>
-            <SharePage />
-          </ProtectedRoute>
-        ),
+        element: <SharePage />,
+      },
+      {
+        path: 'profile',
+        element: <div>Profile Page</div>,
+      },
+      {
+        path: 'settings',
+        element: <div>Settings Page</div>,
       },
     ],
   },
