@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Landing } from '@/pages/landing';
 import { Login } from '@/pages/auth/login';
@@ -35,6 +35,10 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      {
+        index: true,
+        element: <Navigate to="/app/dashboard" replace />,
+      },
       {
         path: 'dashboard',
         element: <Dashboard />,
