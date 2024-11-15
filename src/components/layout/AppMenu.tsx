@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { playwrightLogin } from '@/lib/playwrightLogin';
 
@@ -6,13 +5,20 @@ export const AppMenu = () => {
   const { user, signOut } = useAuth();
 
   const handleLogin = async () => {
-    const result = await playwrightLogin(); // Open Playwright login window
+    const email = prompt('Enter your Poshmark email:');
+    const password = prompt('Enter your Poshmark password:');
 
-    if (result.success) {
-      alert('Login successful!');
-      // Optionally, save session cookies here
+    if (email && password) {
+      const result = await playwrightLogin(email, password); // Pass email and password here
+
+      if (result.success) {
+        alert('Login successful!');
+        // Optionally, save session cookies here
+      } else {
+        alert(`Login failed: ${result.error}`);
+      }
     } else {
-      alert(`Login failed: ${result.error}`);
+      alert('Please enter both email and password.');
     }
   };
 
