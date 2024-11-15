@@ -1,6 +1,15 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, Button } from '@/components/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 
 interface ProtectedRouteProps {
@@ -23,10 +32,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (error) {
     return (
-      <AlertDialog open={showError} onOpenChange={() => setShowError(false)}>
+      <AlertDialog open={showError} onOpenChange={setShowError}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogTitle>Authentication Error</AlertDialogTitle>
             <AlertDialogDescription>{error.message}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
