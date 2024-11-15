@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-export default function AccountsPage() {
+export function AccountsPage() {
   const { sessions, loading, error, clearError, importSession, verifySession, removeSession } = usePoshmark();
 
   const handleConnect = async () => {
