@@ -9,4 +9,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    exclude: ['playwright', 'playwright-core'],
+  },
+  build: {
+    rollupOptions: {
+      external: ['playwright', 'playwright-core'],
+    },
+  },
 });
