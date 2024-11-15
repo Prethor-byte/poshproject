@@ -1,28 +1,34 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const location = useLocation();
+  const { signIn, session, error: authError, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Only redirect if we're not coming from a protected page
+    if (session && location.state?.from !== '/app') {
+      navigate('/app');
+    }
+  }, [session, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    try {
-      const { error } = await signIn(email, password);
-      if (error) throw error;
-      navigate('/app'); // Redirect to the app dashboard
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    const { error } = await signIn(email, password);
+    if (error) {
+      setError(error.message);
     }
   };
 
@@ -50,9 +56,10 @@ export function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
+                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                disabled={loading}
               />
             </div>
           </div>
@@ -71,16 +78,17 @@ export function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
+                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                disabled={loading}
               />
             </div>
           </div>
 
-          {error && (
-            <div className="text-sm text-red-500">
-              {error}
+          {(error || authError) && (
+            <div className="text-red-500 text-sm">
+              {error || authError?.message}
             </div>
           )}
 
@@ -88,7 +96,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -97,7 +105,7 @@ export function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
             Don't have an account? 
-            <a href="/register" className="font-semibold text-primary hover:text-primary/90">
+            <a href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500">
               Sign Up
             </a>
           </p>

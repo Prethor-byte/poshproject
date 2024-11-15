@@ -1,37 +1,84 @@
-import { chromium } from 'playwright';
+import { chromium, type Browser, type BrowserContext } from 'playwright';
 import fs from 'fs';
 
 const SESSION_FILE = 'session.json';
 
-export const playwrightLogin = async (email: string, password: string) => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  cookies?: { name: string; value: string; domain: string }[];
+}
+
+export async function playwrightLogin(
+  email: string,
+  password: string
+): Promise<LoginResult> {
+  let browser: Browser | null = null;
+  let context: BrowserContext | null = null;
 
   try {
+    // Launch browser
+    browser = await chromium.launch({
+      headless: false, // Set to true in production
+    });
+
+    // Create a new context
+    context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Navigate to Poshmark login
     await page.goto('https://poshmark.com/login');
-    await page.fill('input[name="username"]', email);
-    await page.fill('input[name="password"]', password);
+
+    // Fill in login form
+    await page.fill('input[name="login_form[username_email]"]', email);
+    await page.fill('input[name="login_form[password]"]', password);
+
+    // Click login button
     await page.click('button[type="submit"]');
 
-    // Wait for navigation after login
+    // Wait for navigation
     await page.waitForNavigation();
 
     // Check if login was successful
     const isLoggedIn = await page.evaluate(() => {
-      return !!document.querySelector('.user-profile'); // Adjust selector based on Poshmark's DOM
+      return !document.querySelector('form[action="/login"]');
     });
 
     if (!isLoggedIn) {
-      throw new Error('Login failed. Please check your credentials.');
+      return {
+        success: false,
+        error: 'Login failed - incorrect credentials or captcha required',
+      };
     }
 
-    // Save session cookies after login
-    const cookies = await page.context().cookies();
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(cookies));
+    // Get cookies
+    const cookies = await context.cookies();
+    const relevantCookies = cookies.filter(
+      (cookie) => cookie.domain.includes('poshmark.com')
+    );
 
-    return { success: true, browser };
+    // Save session cookies after login
+    fs.writeFileSync(
+      SESSION_FILE,
+      JSON.stringify(relevantCookies.map((cookie) => ({ name: cookie.name, value: cookie.value, domain: cookie.domain })))
+    );
+
+    return {
+      success: true,
+      cookies: relevantCookies.map((cookie) => ({
+        name: cookie.name,
+        value: cookie.value,
+        domain: cookie.domain,
+      })),
+    };
   } catch (error) {
-    console.error('Error during login:', error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+    };
+  } finally {
+    // Clean up
+    if (context) await context.close();
+    if (browser) await browser.close();
   }
-};
+}

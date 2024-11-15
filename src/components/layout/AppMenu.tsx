@@ -1,26 +1,43 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { playwrightLogin } from '@/lib/playwrightLogin'; 
+import { useState } from 'react';
 
 export const AppMenu = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate(); 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    const email = prompt('Enter your Poshmark email:');
-    const password = prompt('Enter your Poshmark password:');
+    setLoading(true);
+    setError(null);
 
-    if (email && password) {
+    try {
+      const email = prompt('Enter your Poshmark email:');
+      const password = prompt('Enter your Poshmark password:');
+
+      if (!email || !password) {
+        setError('Email and password are required');
+        return;
+      }
+
       const result = await playwrightLogin(email, password); 
 
-      if (result.success) {
-        alert('Login successful!');
-        navigate('/'); 
-      } else {
-        alert(`Login failed: ${result.error}`);
+      if (!result.success) {
+        setError(result.error || 'Login failed');
+        return;
       }
-    } else {
-      alert('Please enter both email and password.');
+
+      // Store the cookies in localStorage or your preferred storage
+      localStorage.setItem('poshmark_cookies', JSON.stringify(result.cookies));
+      
+      // Redirect to dashboard
+      navigate('/'); 
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,8 +49,15 @@ export const AppMenu = () => {
           {user ? (
             <button onClick={signOut} className="text-white">Logout</button>
           ) : (
-            <button onClick={handleLogin} className="text-white">Login</button>
+            <button 
+              onClick={handleLogin} 
+              disabled={loading} 
+              className="text-white"
+            >
+              {loading ? 'Connecting...' : 'Login'}
+            </button>
           )}
+          {error && <div className="text-sm text-red-500">{error}</div>}
         </div>
       </div>
       <div className="mt-4">
