@@ -1,152 +1,148 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from './use-auth';
-import { playwrightLogin } from '@/lib/playwrightLogin';
-import type { PoshmarkAccount, PoshmarkLoginResult } from '@/types/poshmark';
-import CryptoJS from 'crypto-js';
+import type { PoshmarkSessionRecord, ImportSessionResult, VerifySessionResult } from '@/types/poshmark';
 
-// Use environment variable for encryption key
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'your-fallback-key';
+const API_URL = 'http://localhost:3001';
 
 export function usePoshmark() {
   const { user } = useAuth();
-  const [accounts, setAccounts] = useState<PoshmarkAccount[]>([]);
+  const [sessions, setSessions] = useState<PoshmarkSessionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Encrypt sensitive data
-  const encrypt = (text: string) => {
-    return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString();
-  };
-
-  // Load accounts
-  useEffect(() => {
+  // Fetch sessions from Supabase
+  const fetchSessions = useCallback(async () => {
     if (!user) return;
-
-    async function loadAccounts() {
-      try {
-        const { data, error } = await supabase
-          .from('poshmark_accounts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setAccounts(data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load accounts');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadAccounts();
-  }, [user]);
-
-  // Add a new Poshmark account
-  const addAccount = async (email: string, password: string) => {
-    if (!user) return null;
 
     try {
       setLoading(true);
-      setError(null);
-
-      // Try logging in to Poshmark first
-      const loginResult = await playwrightLogin(email, password);
-      if (!loginResult.success || !loginResult.cookies) {
-        throw new Error(loginResult.error || 'Failed to login to Poshmark');
-      }
-
-      // Store account in database
       const { data, error } = await supabase
-        .from('poshmark_accounts')
-        .insert({
-          user_id: user.id,
-          email,
-          encrypted_password: encrypt(password),
-          cookies: loginResult.cookies,
-          last_login: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        .from('poshmark_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      setAccounts((prev) => [data, ...prev]);
-      return data;
+      setSessions(data || []);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add account';
-      setError(message);
-      return null;
+      setError(err instanceof Error ? err.message : 'Failed to fetch sessions');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // Remove a Poshmark account
-  const removeAccount = async (id: string) => {
+  // Import a new session
+  const importSession = useCallback(async () => {
+    if (!user) throw new Error('User not authenticated');
+
     try {
-      setError(null);
-      const { error } = await supabase
-        .from('poshmark_accounts')
-        .delete()
-        .match({ id });
+      const response = await fetch(`${API_URL}/api/poshmark/import-session`, {
+        method: 'POST',
+      });
 
-      if (error) throw error;
-      setAccounts((prev) => prev.filter((account) => account.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove account');
-    }
-  };
-
-  // Verify account login status
-  const verifyAccount = async (id: string): Promise<PoshmarkLoginResult> => {
-    try {
-      setError(null);
-      const { data: account, error } = await supabase
-        .from('poshmark_accounts')
-        .select('*')
-        .match({ id })
-        .single();
-
-      if (error) throw error;
-
-      // Try logging in with stored credentials
-      const loginResult = await playwrightLogin(account.email, account.encrypted_password);
+      const result: ImportSessionResult = await response.json();
       
-      // Update last login and cookies if successful
-      if (loginResult.success && loginResult.cookies) {
-        await supabase
-          .from('poshmark_accounts')
-          .update({
-            last_login: new Date().toISOString(),
-            cookies: loginResult.cookies,
-          })
-          .match({ id });
-
-        // Update local state
-        setAccounts((prev) =>
-          prev.map((acc) =>
-            acc.id === id
-              ? { ...acc, last_login: new Date().toISOString() }
-              : acc
-          )
-        );
+      if (!result.success || !result.session) {
+        throw new Error(result.error || 'Failed to import session');
       }
 
-      return loginResult;
+      // Save session to Supabase
+      const { error: insertError } = await supabase
+        .from('poshmark_sessions')
+        .insert({
+          user_id: user.id,
+          username: result.session.username,
+          session_data: result.session,
+          last_verified: new Date().toISOString(),
+        });
+
+      if (insertError) throw insertError;
+
+      // Refresh sessions list
+      await fetchSessions();
+
+      return result.session;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to verify account';
-      setError(message);
-      return { success: false, error: message };
+      throw err instanceof Error ? err : new Error('Failed to import session');
     }
-  };
+  }, [user, fetchSessions]);
+
+  // Verify a session
+  const verifySession = useCallback(async (sessionId: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // Get session from local state
+      const session = sessions.find(s => s.id === sessionId);
+      if (!session) throw new Error('Session not found');
+
+      const response = await fetch(`${API_URL}/api/poshmark/verify-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session: session.session_data,
+        }),
+      });
+
+      const result: VerifySessionResult = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to verify session');
+      }
+
+      // Update session verification timestamp and status
+      const { error: updateError } = await supabase
+        .from('poshmark_sessions')
+        .update({
+          last_verified: new Date().toISOString(),
+          is_active: result.isValid,
+        })
+        .eq('id', sessionId);
+
+      if (updateError) throw updateError;
+
+      // Refresh sessions list
+      await fetchSessions();
+
+      return result.isValid;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to verify session');
+    }
+  }, [user, sessions, fetchSessions]);
+
+  // Remove a session
+  const removeSession = useCallback(async (sessionId: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      const { error } = await supabase
+        .from('poshmark_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Refresh sessions list
+      await fetchSessions();
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to remove session');
+    }
+  }, [user, fetchSessions]);
+
+  // Load sessions on mount
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   return {
-    accounts,
+    sessions,
     loading,
     error,
-    addAccount,
-    removeAccount,
-    verifyAccount,
+    importSession,
+    verifySession,
+    removeSession,
   };
 }
