@@ -1,43 +1,66 @@
 import { useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { AuthError, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
-export type AuthError = {
-  message: string;
-};
+interface AuthState {
+  session: Session | null;
+  user: User | null;
+  error: AuthError | null;
+}
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<AuthError | null>(null);
+  const [state, setState] = useState<AuthState>({
+    session: null,
+    user: null,
+    error: null,
+  });
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
-      if (sessionError) {
-        setError({ message: sessionError.message });
-      } else {
-        setUser(session?.user ?? null);
-      }
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      setState((prev) => ({ ...prev, session, error }));
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      setError(null); // Clear any previous errors
+      setState((prev) => ({ ...prev, session }));
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setState((prev) => ({ ...prev, error }));
+    return { data, error };
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    setState((prev) => ({ ...prev, error }));
+    return { data, error };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    setState((prev) => ({ ...prev, error }));
+    return { error };
+  };
+
   return {
-    user,
-    loading,
-    error,
-    isAuthenticated: !!user,
+    session: state.session,
+    user: state.session?.user ?? null,
+    error: state.error,
+    signIn,
+    signUp,
+    signOut,
   };
 }
