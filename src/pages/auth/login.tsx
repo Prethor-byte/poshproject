@@ -94,6 +94,14 @@ export function LoginPage() {
             </button>
           </div>
         </form>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500">
+            Don't have an account? 
+            <a href="/register" className="font-semibold text-primary hover:text-primary/90">
+              Sign Up
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
