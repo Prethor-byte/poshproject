@@ -1,11 +1,11 @@
-import { chromium } from 'playwright';
+import * as playwright from 'playwright';
 import type { PoshmarkLoginResult } from '@/types/poshmark';
 import fs from 'fs';
 
 const SESSION_FILE = 'session.json';
 
 export async function playwrightLogin(email: string, password: string): Promise<PoshmarkLoginResult> {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await playwright.chromium.launch({ headless: false });
   
   try {
     const context = await browser.newContext();

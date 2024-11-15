@@ -10,11 +10,21 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
     exclude: ['playwright', 'playwright-core'],
   },
   build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       external: ['playwright', 'playwright-core'],
     },
+  },
+  server: {
+    watch: {
+      usePolling: true,
+    },
+    host: true,
   },
 });
