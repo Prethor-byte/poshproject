@@ -5,8 +5,23 @@ import { chromium, Browser, BrowserContext } from 'playwright';
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS to allow requests from our frontend
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+  methods: ['GET', 'POST'],
+  credentials: true,
+}));
+
 app.use(express.json());
+
+// Add error handling middleware
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    success: false,
+    error: err.message || 'Internal server error',
+  });
+});
 
 interface PoshmarkSession {
   cookies: Array<{
@@ -17,12 +32,58 @@ interface PoshmarkSession {
   username?: string;
 }
 
+// Browser configuration to appear more human-like
+const browserConfig = {
+  headless: false,
+  args: [
+    '--disable-blink-features=AutomationControlled',
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-infobars',
+    '--window-position=0,0',
+    '--ignore-certifcate-errors',
+    '--ignore-certifcate-errors-spki-list',
+    '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+  ]
+};
+
+// Context configuration to appear more human-like
+const contextConfig = {
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  viewport: { width: 1280, height: 720 },
+  deviceScaleFactor: 1,
+  isMobile: false,
+  hasTouch: false,
+  javaScriptEnabled: true,
+  locale: 'en-US',
+  timezoneId: 'America/New_York',
+  geolocation: { longitude: -73.935242, latitude: 40.730610 }, // New York coordinates
+  permissions: ['geolocation'],
+};
+
+// Anti-automation detection script
+const antiDetectionScript = `
+  Object.defineProperty(window.navigator, 'webdriver', { get: () => false });
+  window.navigator.chrome = { runtime: {} };
+  Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+  Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+`;
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Verify if a session is still valid
 async function verifySession(sessionData: PoshmarkSession): Promise<boolean> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(browserConfig);
   
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext(contextConfig);
+    const page = await context.newPage();
+    
+    // Add anti-detection script
+    await page.addInitScript(antiDetectionScript);
     
     // Set the cookies from the session
     await context.addCookies(sessionData.cookies.map(cookie => ({
@@ -31,8 +92,6 @@ async function verifySession(sessionData: PoshmarkSession): Promise<boolean> {
       secure: true,
       sameSite: 'Lax' as const,
     })));
-
-    const page = await context.newPage();
     
     // Try to access the user's profile page
     await page.goto('https://poshmark.com/closet');
@@ -50,57 +109,99 @@ async function verifySession(sessionData: PoshmarkSession): Promise<boolean> {
 
 // Import session from browser
 app.post('/api/poshmark/import-session', async (req, res) => {
-  const browser = await chromium.launch({ headless: false });
+  console.log('Starting import session...');
+  let browser: Browser | null = null;
   
   try {
-    const context = await browser.newContext();
+    browser = await chromium.launch(browserConfig);
+    const context = await browser.newContext(contextConfig);
     const page = await context.newPage();
 
+    // Add anti-detection script
+    await page.addInitScript(antiDetectionScript);
+
+    console.log('Navigating to Poshmark...');
     // Navigate to Poshmark
     await page.goto('https://poshmark.com');
     
-    // Wait for user to log in manually
     console.log('Waiting for user to log in...');
-    
-    // Wait for either the logout link (success) or 5 minutes timeout
-    await Promise.race([
-      page.waitForSelector('a[href="/logout"]', { timeout: 300000 }),
-      page.waitForSelector('.navbar-username', { timeout: 300000 })
-    ]);
 
-    // Get username if available
-    let username: string | undefined;
+    // Wait for login success or failure
     try {
-      const usernameElement = await page.$('.navbar-username');
-      if (usernameElement) {
-        username = await usernameElement.textContent() || undefined;
+      // Wait for either successful login indicators or error message
+      const result = await Promise.race([
+        // Success cases
+        Promise.all([
+          page.waitForSelector('a[href="/logout"]', { timeout: 300000 }).catch(() => null),
+          page.waitForSelector('.navbar-username', { timeout: 300000 }).catch(() => null)
+        ]),
+        // Error cases
+        page.waitForSelector('.error-message, .alert-danger', { timeout: 300000 }).catch(() => null),
+        // Page close case
+        new Promise((_, reject) => {
+          page.on('close', () => reject(new Error('Login window was closed')));
+        })
+      ]);
+
+      // If we got an error message
+      const errorElement = await page.$('.error-message, .alert-danger');
+      if (errorElement) {
+        const errorText = await errorElement.textContent();
+        throw new Error(errorText || 'Login failed');
       }
+
+      // If we didn't get either success or error, something went wrong
+      if (!result) {
+        throw new Error('Login process was interrupted');
+      }
+
+      console.log('User logged in successfully');
+
+      // Get username if available
+      let username: string | undefined;
+      try {
+        const usernameElement = await page.$('.navbar-username');
+        if (usernameElement) {
+          username = await usernameElement.textContent() || undefined;
+        }
+      } catch (error) {
+        console.warn('Could not get username:', error);
+      }
+
+      // Get cookies
+      const cookies = await context.cookies();
+      
+      res.json({
+        success: true,
+        session: {
+          cookies: cookies.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+          })),
+          username,
+        },
+      });
+
     } catch (error) {
-      console.warn('Could not get username:', error);
+      throw new Error(
+        error instanceof Error 
+          ? `Login failed: ${error.message}` 
+          : 'Login process failed'
+      );
     }
 
-    // Get cookies
-    const cookies = await context.cookies();
-    
-    res.json({
-      success: true,
-      session: {
-        cookies: cookies.map(cookie => ({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-        })),
-        username,
-      },
-    });
-
   } catch (error) {
-    res.status(500).json({
+    console.error('Import session failed:', error);
+    res.status(400).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorCode: 'LOGIN_FAILED'
     });
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 });
 
@@ -122,6 +223,7 @@ app.post('/api/poshmark/verify-session', async (req, res) => {
       isValid,
     });
   } catch (error) {
+    console.error('Verify session failed:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

@@ -8,7 +8,7 @@ import { SharePage } from '@/pages/share';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
 import { LandingPage } from '@/pages/landing';
-import { AccountsPage } from '@/pages/accounts';
+import AccountsPage from '@/pages/accounts';
 
 export const router = createBrowserRouter([
   {
@@ -49,11 +49,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'accounts',
-        element: (
-          <ProtectedRoute>
-            <AccountsPage />
-          </ProtectedRoute>
-        ),
+        element: <AccountsPage />,
       },
     ],
   },
