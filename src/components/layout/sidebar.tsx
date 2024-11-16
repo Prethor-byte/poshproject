@@ -47,101 +47,97 @@ export function Sidebar() {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          "fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
-          "hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-200",
+          "fixed top-4 left-4 z-50 p-2 rounded-lg bg-background border-border",
+          "hover:bg-accent hover:text-accent-foreground transition-colors duration-200",
           "lg:hidden"
         )}
       >
-        <Bars3Icon className="h-5 w-5 text-zinc-500" />
+        <Bars3Icon className="h-5 w-5" />
       </button>
 
       <div
         className={cn(
-          "fixed inset-y-0 z-40 flex flex-col transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 z-40 flex flex-col transition-all duration-300 ease-in-out bg-background border-r border-border",
           isCollapsed ? "w-20" : "w-72",
           isMobile && isCollapsed && "-translate-x-full"
         )}
       >
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 h-full">
-          <div className="flex h-16 shrink-0 items-center justify-between px-6">
+        <div className="flex h-16 shrink-0 items-center justify-between px-6">
+          {!isCollapsed && (
+            <Link to="/app" className="text-xl font-semibold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">
+              Poshmark
+            </Link>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="rounded-lg p-2 hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            {isCollapsed ? (
+              <ChevronRightIcon className="h-5 w-5" />
+            ) : (
+              <ChevronLeftIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-y-4 px-4">
+          <ul role="list" className="flex flex-1 flex-col gap-y-1">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <li key={item.name}>
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      'group flex items-center gap-x-3 rounded-lg p-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        'h-5 w-5 shrink-0',
+                        isActive
+                          ? 'text-current'
+                          : 'text-muted-foreground group-hover:text-current'
+                      )}
+                      aria-hidden="true"
+                    />
+                    {!isCollapsed && <span>{item.name}</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-auto pb-4">
             {!isCollapsed && (
-              <Link to="/app" className="text-xl font-semibold bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
-                Poshmark
-              </Link>
+              <div className="mb-2 px-2">
+                <div className="text-sm font-medium text-muted-foreground">
+                  {user?.email}
+                </div>
+              </div>
             )}
             <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              {isCollapsed ? (
-                <ChevronRightIcon className="h-5 w-5 text-zinc-500" />
-              ) : (
-                <ChevronLeftIcon className="h-5 w-5 text-zinc-500" />
+              onClick={() => signOut()}
+              className={cn(
+                "group flex items-center gap-x-3 rounded-lg p-2 text-sm font-medium transition-colors w-full",
+                "text-muted-foreground hover:bg-destructive hover:text-destructive-foreground",
+                isCollapsed && "justify-center"
               )}
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5 shrink-0" />
+              {!isCollapsed && "Sign out"}
             </button>
           </div>
-          <nav className="flex flex-1 flex-col px-4">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
-              <li>
-                <ul role="list" className="space-y-2">
-                  {navigation.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={cn(
-                            'group flex items-center gap-x-3 rounded-lg p-2 text-sm font-medium transition-colors',
-                            isActive
-                              ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-600 dark:from-violet-400/10 dark:to-indigo-400/10 dark:text-violet-400'
-                              : 'text-zinc-700 hover:bg-zinc-100 hover:text-violet-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-violet-400'
-                          )}
-                        >
-                          <item.icon
-                            className={cn(
-                              'h-5 w-5 shrink-0',
-                              isActive
-                                ? 'text-violet-600 dark:text-violet-400'
-                                : 'text-zinc-400 group-hover:text-violet-600 dark:text-zinc-500 dark:group-hover:text-violet-400'
-                            )}
-                            aria-hidden="true"
-                          />
-                          {!isCollapsed && <span>{item.name}</span>}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </li>
-              <li className="mt-auto">
-                {!isCollapsed && (
-                  <div className="mb-2 px-2">
-                    <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {user?.email}
-                    </div>
-                  </div>
-                )}
-                <button
-                  onClick={() => signOut()}
-                  className={cn(
-                    "group flex items-center gap-x-3 rounded-lg p-2 text-sm font-medium transition-colors w-full",
-                    "text-zinc-700 hover:bg-zinc-100 hover:text-violet-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-violet-400",
-                    isCollapsed && "justify-center"
-                  )}
-                >
-                  <ArrowRightOnRectangleIcon className="h-5 w-5 text-zinc-400 group-hover:text-violet-600 dark:text-zinc-500 dark:group-hover:text-violet-400" />
-                  {!isCollapsed && "Sign out"}
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
+        </nav>
       </div>
 
       {/* Overlay for mobile */}
       {!isCollapsed && isMobile && (
         <div 
-          className="fixed inset-0 bg-zinc-900/50 z-30"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30"
           onClick={() => setIsCollapsed(true)}
         />
       )}
