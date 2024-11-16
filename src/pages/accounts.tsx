@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { usePoshmark } from '@/hooks/use-poshmark';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -103,11 +103,6 @@ export function AccountsPage() {
         <Alert variant="destructive" className="mb-4">
           <XCircle className="h-4 w-4" />
           <AlertTitle>{error.message}</AlertTitle>
-          {error.details && (
-            <AlertDescription className="mt-2">
-              {error.details}
-            </AlertDescription>
-          )}
           <Button 
             variant="outline" 
             size="sm" 
