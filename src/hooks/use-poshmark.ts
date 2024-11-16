@@ -6,10 +6,10 @@ import { isFeatureEnabled } from '@/config/features';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-const POSHMARK_URLS = {
+const POSHMARK_URLS: Record<PoshmarkRegion, string> = {
   US: 'https://poshmark.com',
   CA: 'https://poshmark.ca'
-};
+} as const;
 
 export interface PoshmarkError {
   message: string;
@@ -77,6 +77,7 @@ export function usePoshmark() {
         },
         body: JSON.stringify({ 
           region,
+          baseUrl: POSHMARK_URLS[region],
           useProxy: isFeatureEnabled('ENABLE_PROXY')
         })
       });
@@ -133,6 +134,8 @@ export function usePoshmark() {
         throw new Error('Session not found');
       }
 
+      const region = sessionData.region as PoshmarkRegion;
+
       // Verify session with backend
       const response = await fetch(`${API_URL}/api/poshmark/verify-session`, {
         method: 'POST',
@@ -142,7 +145,8 @@ export function usePoshmark() {
         },
         body: JSON.stringify({
           session: sessionData.session_data,
-          region: sessionData.region,
+          region,
+          baseUrl: POSHMARK_URLS[region],
           useProxy: isFeatureEnabled('ENABLE_PROXY')
         })
       });

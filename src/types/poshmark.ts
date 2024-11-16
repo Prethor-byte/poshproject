@@ -56,3 +56,10 @@ export interface VerifySessionResult {
   is_active: boolean;
   error?: string;
 }
+
+export interface PoshmarkLoginResult {
+  success: boolean;
+  session?: PoshmarkSession;
+  error?: string;
+  username?: string;
+}
