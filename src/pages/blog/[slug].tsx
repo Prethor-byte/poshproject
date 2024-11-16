@@ -10,7 +10,7 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 
 // Custom styles for markdown content
 const markdownStyles = {
@@ -91,35 +91,37 @@ export function BlogPostPage() {
         </script>
       </Helmet>
 
-      <main className="min-h-screen bg-white dark:bg-gray-950">
-        <nav className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/blog")}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Blog
-              </Button>
-              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
-              <Link to="/">
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <nav className="sticky top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex items-center space-x-4">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
+                  onClick={() => navigate("/blog")}
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
                 >
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Blog
                 </Button>
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <ThemeSwitch />
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {format(new Date(post.publishedAt), 'MMMM d, yyyy')}
+                <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+                <Link to="/">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex items-center gap-4">
+                <ThemeSwitch />
+                <time className="text-sm text-gray-500 dark:text-gray-400">
+                  {format(new Date(post.publishedAt), 'MMMM d, yyyy')}
+                </time>
               </div>
             </div>
           </div>

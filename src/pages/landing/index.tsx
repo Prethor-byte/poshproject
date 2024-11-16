@@ -9,6 +9,7 @@ import 'react-lazy-load-image-component/src/effects/blur.css';
 import { trackEvent } from "@/lib/analytics";
 import { DemoVideoModal } from "@/components/demo-video-modal";
 import { useToast } from "@/components/ui/use-toast";
+import { ThemeSwitch } from "@/components/ui/theme-switch"; // Fixing the import path for the ThemeSwitch component
 
 // Structured data for rich snippets
 const structuredData = {
@@ -104,7 +105,7 @@ export function LandingPage() {
         </script>
       </Helmet>
 
-      <div className="flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-white">
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
         {/* Skip to main content for accessibility */}
         <a
           href="#main-content"
@@ -115,7 +116,7 @@ export function LandingPage() {
 
         {/* Navbar */}
         <nav
-          className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200"
+          className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800"
           role="navigation"
           aria-label="Main navigation"
         >
@@ -132,25 +133,29 @@ export function LandingPage() {
 
               {/* Desktop Navigation */}
               <div className="hidden lg:flex lg:items-center lg:space-x-8">
-                <Link to="/blog" className="text-gray-600 hover:text-gray-900">Blog</Link>
-                <button onClick={scrollToPricing} className="text-gray-600 hover:text-gray-900">Pricing</button>
-                <Link to="/login" className="text-gray-600 hover:text-gray-900">Sign In</Link>
+                <Link to="/blog" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">Blog</Link>
+                <button onClick={scrollToPricing} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">Pricing</button>
+                <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">Sign In</Link>
                 <Link to="/register">
                   <Button>Sign Up</Button>
                 </Link>
+                <ThemeSwitch />
               </div>
 
               {/* Mobile menu button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
-              >
-                {isMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
+              <div className="flex items-center gap-4 lg:hidden">
+                <ThemeSwitch />
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
+                >
+                  {isMenuOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Mobile Navigation */}
@@ -163,7 +168,7 @@ export function LandingPage() {
               <div className="space-y-1 pb-3 pt-2">
                 <Link
                   to="/blog"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-50"
                 >
                   Blog
                 </Link>
@@ -172,13 +177,13 @@ export function LandingPage() {
                     scrollToPricing();
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-50"
                 >
                   Pricing
                 </button>
                 <Link
                   to="/login"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-50"
                 >
                   Sign In
                 </Link>
@@ -198,10 +203,10 @@ export function LandingPage() {
           <header className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 mt-16" role="banner">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
               <div className="flex flex-col justify-center space-y-8">
-                <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+                <h1 className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl">
                   Automate Your <span className="text-primary">Poshmark</span> Business
                 </h1>
-                <p className="text-xl text-gray-600">
+                <p className="text-xl text-gray-600 dark:text-gray-400">
                   Boost your sales and save countless hours with our intelligent automation platform designed specifically for Poshmark resellers.
                 </p>
                 <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
@@ -240,7 +245,7 @@ export function LandingPage() {
                     Watch Demo
                   </Button>
                 </div>
-                <div className="flex items-center space-x-8 text-sm text-gray-600" aria-label="Trial information">
+                <div className="flex items-center space-x-8 text-sm text-gray-600 dark:text-gray-400" aria-label="Trial information">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-primary" aria-hidden="true" />
                     <span>14-day free trial</span>
@@ -253,13 +258,13 @@ export function LandingPage() {
               </div>
               <div className="relative hidden lg:block">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-secondary/30 rounded-3xl blur-3xl" aria-hidden="true" />
-                <div className="relative rounded-3xl bg-white/80 p-8 shadow-xl backdrop-blur">
+                <div className="relative rounded-3xl bg-white/80 p-8 shadow-xl backdrop-blur dark:bg-gray-900/80">
                   <LazyLoadImage
                     alt="PoshAuto dashboard preview"
                     src="/dashboard-preview.png"
                     effect="blur"
                     className="aspect-[4/3] rounded-2xl w-full h-full object-cover"
-                    wrapperClassName="aspect-[4/3] rounded-2xl bg-gray-100"
+                    wrapperClassName="aspect-[4/3] rounded-2xl bg-gray-100 dark:bg-gray-800"
                   />
                 </div>
               </div>
@@ -268,18 +273,18 @@ export function LandingPage() {
 
           {/* Features Section */}
           <section
-            className="bg-gray-50 py-24"
+            className="bg-gray-50 py-24 dark:bg-gray-900"
             aria-labelledby="features-heading"
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
                 <h2
                   id="features-heading"
-                  className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl"
+                  className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl"
                 >
                   Everything you need to scale your Poshmark business
                 </h2>
-                <p className="mt-4 text-lg text-gray-600">
+                <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
                   Our platform provides all the tools you need to automate your Poshmark operations
                 </p>
               </div>
@@ -293,17 +298,17 @@ export function LandingPage() {
                     data-aos-delay={index * 100}
                   >
                     <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary/50 to-secondary/50 opacity-20 blur transition group-hover:opacity-100" />
-                    <div className="relative rounded-lg bg-white p-8 shadow-lg">
+                    <div className="relative rounded-lg bg-white p-8 shadow-lg dark:bg-gray-900">
                       <div
                         className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"
                         aria-hidden="true"
                       >
                         {feature.icon}
                       </div>
-                      <h3 className="mt-6 text-xl font-semibold text-gray-900">
+                      <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-gray-50">
                         {feature.title}
                       </h3>
-                      <p className="mt-2 text-gray-600">{feature.description}</p>
+                      <p className="mt-2 text-gray-600 dark:text-gray-400">{feature.description}</p>
                     </div>
                   </div>
                 ))}
@@ -321,11 +326,11 @@ export function LandingPage() {
               <div className="text-center">
                 <h2
                   id="pricing-heading"
-                  className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl"
+                  className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl"
                 >
                   Simple, transparent pricing
                 </h2>
-                <p className="mt-4 text-lg text-gray-600">
+                <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
                   Choose the plan that best fits your business needs
                 </p>
               </div>
@@ -334,9 +339,7 @@ export function LandingPage() {
                 {plans.map((plan) => (
                   <div
                     key={plan.name}
-                    className={`relative rounded-2xl bg-white p-8 shadow-lg ${
-                      plan.featured ? "ring-2 ring-primary" : ""
-                    }`}
+                    className={`relative rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900 ${plan.featured ? "ring-2 ring-primary" : ""}`}
                   >
                     {plan.featured && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-sm font-medium text-white">
@@ -344,12 +347,12 @@ export function LandingPage() {
                       </div>
                     )}
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{plan.name}</h3>
                       <div className="mt-4">
                         <span className="text-4xl font-bold">${plan.price}</span>
-                        <span className="text-gray-600">/month</span>
+                        <span className="text-gray-600 dark:text-gray-400">/month</span>
                       </div>
-                      <p className="mt-2 text-sm text-gray-600">{plan.description}</p>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{plan.description}</p>
                     </div>
                     <ul className="mt-8 space-y-4">
                       {plan.features.map((feature) => (
@@ -367,7 +370,7 @@ export function LandingPage() {
                               d="M5 13l4 4L19 7"
                             />
                           </svg>
-                          <span className="ml-3 text-gray-600">{feature}</span>
+                          <span className="ml-3 text-gray-600 dark:text-gray-400">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -389,13 +392,13 @@ export function LandingPage() {
           </section>
 
           {/* Testimonials */}
-          <section className="bg-gray-50 py-24">
+          <section className="bg-gray-50 py-24 dark:bg-gray-900">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl">
                   Loved by Poshmark sellers
                 </h2>
-                <p className="mt-4 text-lg text-gray-600">
+                <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
                   Here's what our customers have to say
                 </p>
               </div>
@@ -404,18 +407,18 @@ export function LandingPage() {
                 {testimonials.map((testimonial) => (
                   <div
                     key={testimonial.name}
-                    className="rounded-lg bg-white p-8 shadow-lg"
+                    className="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-900"
                   >
                     <div className="flex items-center">
                       <div className="h-12 w-12 rounded-full bg-gray-200" />
                       <div className="ml-4">
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-50">
                           {testimonial.name}
                         </h4>
-                        <p className="text-sm text-gray-600">{testimonial.role}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
                       </div>
                     </div>
-                    <p className="mt-6 text-gray-600">{testimonial.content}</p>
+                    <p className="mt-6 text-gray-600 dark:text-gray-400">{testimonial.content}</p>
                   </div>
                 ))}
               </div>
@@ -423,23 +426,23 @@ export function LandingPage() {
           </section>
 
           {/* CTA Section */}
-          <section className="bg-primary py-24">
+          <section className="bg-primary py-24 dark:bg-gray-900">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tight text-white dark:text-gray-50 sm:text-4xl">
                   Ready to grow your Poshmark business?
                 </h2>
-                <p className="mt-4 text-lg text-white/90">
+                <p className="mt-4 text-lg text-white/90 dark:text-gray-400">
                   Join thousands of successful Poshmark sellers who are saving time and making more money
                 </p>
                 <div className="mt-8 flex justify-center space-x-4">
                   <Link to="/register">
-                    <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100">
+                    <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-700">
                       Start Free Trial
                     </Button>
                   </Link>
                   <a href="mailto:sales@poshauto.com">
-                    <Button size="lg" variant="outline" className="text-white hover:bg-primary/90">
+                    <Button size="lg" variant="outline" className="text-white dark:text-gray-50 dark:hover:bg-gray-800">
                       Contact Sales
                     </Button>
                   </a>

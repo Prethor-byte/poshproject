@@ -6,7 +6,7 @@ import { blogPosts } from "@/data/blog-posts";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 
 export function BlogPage() {
   if (!blogPosts || blogPosts.length === 0) {
@@ -41,25 +41,27 @@ export function BlogPage() {
         />
       </Helmet>
 
-      <main className="min-h-screen bg-white dark:bg-gray-950">
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
         {/* Navigation Bar */}
-        <nav className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
-              PoshAuto Blog
-            </h1>
-            <div className="flex items-center gap-4">
-              <ThemeSwitch />
-              <Link to="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
-                </Button>
-              </Link>
+        <nav className="sticky top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <h1 className="text-2xl font-bold text-primary">
+                PoshAuto Blog
+              </h1>
+              <div className="flex items-center gap-4">
+                <ThemeSwitch />
+                <Link to="/">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </nav>
