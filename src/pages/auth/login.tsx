@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
+import { PublicLayout } from '@/components/layout/public-layout';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icons } from "@/components/ui/icons";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -27,91 +33,91 @@ export function LoginPage() {
       return;
     }
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(error.message);
+    try {
+      await signIn(email, password);
+    } catch (err) {
+      setError('Failed to sign in');
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight">
-          Sign in to your account
-        </h2>
-      </div>
-
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium leading-6"
-            >
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
+    <PublicLayout>
+      <div className="container relative min-h-[calc(100vh-4rem)] flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+          <div className="absolute inset-0 bg-zinc-900" />
+          <div className="relative z-20 flex items-center text-lg font-medium">
+            <Icons.logo className="mr-2 h-6 w-6" />
+            PoshAuto
+          </div>
+          <div className="relative z-20 mt-auto">
+            <blockquote className="space-y-2">
+              <p className="text-lg">
+                "PoshAuto has completely transformed how I manage my Poshmark business. The automation tools save me hours every day!"
+              </p>
+              <footer className="text-sm">Sarah Johnson</footer>
+            </blockquote>
+          </div>
+        </div>
+        <div className="lg:p-8">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <Card>
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl text-center">Sign in</CardTitle>
+                <CardDescription className="text-center">
+                  Enter your email and password to sign in to your account
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSubmit}>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                  {(error || authError) && (
+                    <div className="text-red-500 text-sm text-center">
+                      {error || (authError && 'message' in authError ? authError.message : 'Authentication failed')}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                  <Button className="w-full" type="submit" disabled={loading}>
+                    {loading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                    Sign in
+                  </Button>
+                  <div className="text-sm text-muted-foreground text-center">
+                    <Link to="/forgot-password" className="hover:text-primary">
+                      Forgot your password?
+                    </Link>
+                  </div>
+                </CardFooter>
+              </form>
+            </Card>
+            <div className="text-sm text-muted-foreground text-center">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary hover:underline">
+                Sign up
+              </Link>
             </div>
           </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium leading-6"
-            >
-              Password
-            </label>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          {(error || authError) && (
-            <div className="text-red-500 text-sm">
-              {error || authError?.message}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Don't have an account? 
-            <a href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500">
-              Sign Up
-            </a>
-          </p>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }
