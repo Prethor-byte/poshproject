@@ -198,12 +198,12 @@ export function LandingPage() {
           </div>
         </nav>
 
-        <main id="main-content">
+        <main id="main-content" role="main">
           {/* Hero Section */}
-          <header className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 mt-16" role="banner">
+          <section className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 mt-16" aria-labelledby="hero-heading">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
               <div className="flex flex-col justify-center space-y-8">
-                <h1 className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl">
+                <h1 id="hero-heading" className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl">
                   Automate Your <span className="text-primary">Poshmark</span> Business
                 </h1>
                 <p className="text-xl text-gray-600 dark:text-gray-400">
@@ -256,11 +256,11 @@ export function LandingPage() {
                   </div>
                 </div>
               </div>
-              <div className="relative hidden lg:block">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-secondary/30 rounded-3xl blur-3xl" aria-hidden="true" />
+              <div className="relative hidden lg:block" aria-hidden="true">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-secondary/30 rounded-3xl blur-3xl" />
                 <div className="relative rounded-3xl bg-white/80 p-8 shadow-xl backdrop-blur dark:bg-gray-900/80">
                   <LazyLoadImage
-                    alt="PoshAuto dashboard preview"
+                    alt="PoshAuto dashboard preview showing automation features and analytics"
                     src="/dashboard-preview.png"
                     effect="blur"
                     className="aspect-[4/3] rounded-2xl w-full h-full object-cover"
@@ -269,7 +269,7 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-          </header>
+          </section>
 
           {/* Features Section */}
           <section
@@ -289,13 +289,14 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="mt-20 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-20 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3" role="list">
                 {features.map((feature, index) => (
                   <div
                     key={feature.title}
                     className="relative"
                     data-aos="fade-up"
                     data-aos-delay={index * 100}
+                    role="listitem"
                   >
                     <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary/50 to-secondary/50 opacity-20 blur transition group-hover:opacity-100" />
                     <div className="relative rounded-lg bg-white p-8 shadow-lg dark:bg-gray-900">
@@ -335,14 +336,15 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="mt-20 grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="mt-20 grid grid-cols-1 gap-8 lg:grid-cols-3" role="list">
                 {plans.map((plan) => (
                   <div
                     key={plan.name}
                     className={`relative rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900 ${plan.featured ? "ring-2 ring-primary" : ""}`}
+                    role="listitem"
                   >
                     {plan.featured && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-sm font-medium text-white">
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-sm font-medium text-white" role="note">
                         Most Popular
                       </div>
                     )}
@@ -354,7 +356,7 @@ export function LandingPage() {
                       </div>
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{plan.description}</p>
                     </div>
-                    <ul className="mt-8 space-y-4">
+                    <ul className="mt-8 space-y-4" role="list" aria-label={`Features included in ${plan.name} plan`}>
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex items-center">
                           <svg
@@ -362,6 +364,7 @@ export function LandingPage() {
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            aria-hidden="true"
                           >
                             <path
                               strokeLinecap="round"
@@ -392,10 +395,13 @@ export function LandingPage() {
           </section>
 
           {/* Testimonials */}
-          <section className="bg-gray-50 py-24 dark:bg-gray-900">
+          <section 
+            className="bg-gray-50 py-24 dark:bg-gray-900"
+            aria-labelledby="testimonials-heading"
+          >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl">
+                <h2 id="testimonials-heading" className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl">
                   Loved by Poshmark sellers
                 </h2>
                 <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
@@ -403,11 +409,12 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="mt-20 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-20 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3" role="list">
                 {testimonials.map((testimonial) => (
                   <div
                     key={testimonial.name}
                     className="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-900"
+                    role="listitem"
                   >
                     <div className="flex items-center">
                       <div className="h-12 w-12 rounded-full bg-gray-200" />
@@ -426,10 +433,13 @@ export function LandingPage() {
           </section>
 
           {/* CTA Section */}
-          <section className="bg-primary py-24 dark:bg-gray-900">
+          <section 
+            className="bg-primary py-24 dark:bg-gray-900"
+            aria-labelledby="cta-heading"
+          >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white dark:text-gray-50 sm:text-4xl">
+                <h2 id="cta-heading" className="text-3xl font-bold tracking-tight text-white dark:text-gray-50 sm:text-4xl">
                   Ready to grow your Poshmark business?
                 </h2>
                 <p className="mt-4 text-lg text-white/90 dark:text-gray-400">
@@ -437,12 +447,22 @@ export function LandingPage() {
                 </p>
                 <div className="mt-8 flex justify-center space-x-4">
                   <Link to="/register">
-                    <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-700">
+                    <Button 
+                      size="lg" 
+                      variant="secondary" 
+                      className="bg-white text-primary hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-700"
+                      aria-label="Start your free trial now"
+                    >
                       Start Free Trial
                     </Button>
                   </Link>
                   <a href="mailto:sales@poshauto.com">
-                    <Button size="lg" variant="outline" className="text-white dark:text-gray-50 dark:hover:bg-gray-800">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="text-white dark:text-gray-50 dark:hover:bg-gray-800"
+                      aria-label="Contact our sales team"
+                    >
                       Contact Sales
                     </Button>
                   </a>
