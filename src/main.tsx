@@ -10,7 +10,7 @@ import './index.css';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HelmetProvider>
-      <ThemeProvider defaultTheme="system" storageKey="poshmark-theme">
+      <ThemeProvider defaultTheme="light" storageKey="poshmark-theme">
         <RouterProvider router={router} />
         <Toaster />
       </ThemeProvider>
