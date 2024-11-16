@@ -23,6 +23,8 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
+type PoshmarkRegion = 'US' | 'CA';
+
 interface PoshmarkSession {
   cookies: Array<{
     name: string;
@@ -30,7 +32,13 @@ interface PoshmarkSession {
     domain: string;
   }>;
   username?: string;
+  region: PoshmarkRegion;
 }
+
+const POSHMARK_URLS: Record<PoshmarkRegion, string> = {
+  US: 'https://poshmark.com',
+  CA: 'https://poshmark.ca'
+} as const;
 
 // Browser configuration to appear more human-like
 const browserConfig = {
@@ -93,8 +101,9 @@ async function verifySession(sessionData: PoshmarkSession): Promise<boolean> {
       sameSite: 'Lax' as const,
     })));
     
-    // Try to access the user's profile page
-    await page.goto('https://poshmark.com/closet');
+    // Try to access the user's profile page using the correct domain
+    const baseUrl = POSHMARK_URLS[sessionData.region];
+    await page.goto(`${baseUrl}/closet`);
     
     // Check if we're still logged in by looking for logout button
     const logoutButton = await page.$('a[href="/logout"]');
@@ -107,9 +116,23 @@ async function verifySession(sessionData: PoshmarkSession): Promise<boolean> {
   }
 }
 
+interface ImportSessionRequest {
+  region: PoshmarkRegion;
+  useProxy?: boolean;
+}
+
 // Import session from browser
 app.post('/api/poshmark/import-session', async (req, res) => {
   console.log('Starting import session...');
+  const { region } = req.body as ImportSessionRequest;
+  
+  if (!region || !POSHMARK_URLS[region]) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid region specified',
+    });
+  }
+
   let browser: Browser | null = null;
   
   try {
@@ -120,9 +143,9 @@ app.post('/api/poshmark/import-session', async (req, res) => {
     // Add anti-detection script
     await page.addInitScript(antiDetectionScript);
 
-    console.log('Navigating to Poshmark...');
-    // Navigate to Poshmark
-    await page.goto('https://poshmark.com');
+    console.log(`Navigating to Poshmark ${region}...`);
+    // Navigate to Poshmark using the correct domain
+    await page.goto(POSHMARK_URLS[region]);
     
     console.log('Waiting for user to log in...');
 
@@ -180,6 +203,7 @@ app.post('/api/poshmark/import-session', async (req, res) => {
             domain: cookie.domain,
           })),
           username,
+          region,
         },
       });
 
@@ -205,11 +229,16 @@ app.post('/api/poshmark/import-session', async (req, res) => {
   }
 });
 
+interface VerifySessionRequest {
+  session: PoshmarkSession;
+  useProxy?: boolean;
+}
+
 // Verify an existing session
 app.post('/api/poshmark/verify-session', async (req, res) => {
-  const { session } = req.body;
+  const { session } = req.body as VerifySessionRequest;
   
-  if (!session?.cookies) {
+  if (!session?.cookies || !session?.region) {
     return res.status(400).json({
       success: false,
       error: 'Invalid session data',
@@ -220,7 +249,7 @@ app.post('/api/poshmark/verify-session', async (req, res) => {
     const isValid = await verifySession(session);
     res.json({
       success: true,
-      isValid,
+      is_active: isValid,
     });
   } catch (error) {
     console.error('Verify session failed:', error);

@@ -4,13 +4,34 @@ import { usePoshmark } from '@/hooks/use-poshmark';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from 'react';
+import type { PoshmarkRegion } from '@/types/poshmark';
 
 export function AccountsPage() {
   const { sessions, loading, error, clearError, importSession, verifySession, removeSession } = usePoshmark();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<PoshmarkRegion>('US');
 
   const handleConnect = async () => {
     try {
-      await importSession();
+      await importSession(selectedRegion);
+      setIsDialogOpen(false);
     } catch (err) {
       // Error is handled by the hook
     }
@@ -40,12 +61,41 @@ export function AccountsPage() {
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Poshmark Accounts</h1>
-        <Button 
-          onClick={handleConnect} 
-          disabled={loading}
-        >
-          {loading ? 'Connecting...' : 'Connect Account'}
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>Connect Account</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Connect Poshmark Account</DialogTitle>
+              <DialogDescription>
+                Choose your Poshmark region and connect your account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Select
+                value={selectedRegion}
+                onValueChange={(value) => setSelectedRegion(value as PoshmarkRegion)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">United States (poshmark.com)</SelectItem>
+                  <SelectItem value="CA">Canada (poshmark.ca)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConnect} disabled={loading}>
+                {loading ? 'Connecting...' : 'Connect'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Error Alert */}
@@ -76,20 +126,23 @@ export function AccountsPage() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-semibold">{session.username}</h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Connected {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Region: {session.region === 'US' ? 'United States' : 'Canada'}
                 </p>
               </div>
               <div className={`px-2 py-1 rounded-full text-xs ${
                 session.is_active 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               }`}>
                 {session.is_active ? 'Active' : 'Inactive'}
               </div>
             </div>
             
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Last verified: {formatDistanceToNow(new Date(session.last_verified), { addSuffix: true })}
             </div>
             
@@ -102,10 +155,9 @@ export function AccountsPage() {
               >
                 Verify
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="destructive"
                 size="sm"
-                className="text-red-600 hover:text-red-700" 
                 onClick={() => handleRemove(session.id)}
                 disabled={loading}
               >
@@ -123,7 +175,7 @@ export function AccountsPage() {
           <p className="text-gray-600 mb-4">
             Connect your Poshmark account to start automating your closet.
           </p>
-          <Button onClick={handleConnect}>Connect Account</Button>
+          <Button onClick={() => setIsDialogOpen(true)}>Connect Account</Button>
         </Card>
       )}
     </div>

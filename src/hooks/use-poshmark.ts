@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
-import type { PoshmarkSessionRecord, ImportSessionResult, VerifySessionResult } from '@/types/poshmark';
+import type { PoshmarkSessionRecord, ImportSessionResult, VerifySessionResult, PoshmarkRegion } from '@/types/poshmark';
+import { isFeatureEnabled } from '@/config/features';
 
-const API_URL = 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+const POSHMARK_URLS = {
+  US: 'https://poshmark.com',
+  CA: 'https://poshmark.ca'
+};
 
 export interface PoshmarkError {
   message: string;
@@ -17,12 +23,10 @@ export function usePoshmark() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PoshmarkError | null>(null);
 
-  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Fetch sessions from Supabase
   const fetchSessions = useCallback(async () => {
     if (!user) return;
 
@@ -47,15 +51,14 @@ export function usePoshmark() {
     }
   }, [user]);
 
-  // Import a new session
-  const importSession = useCallback(async () => {
+  const importSession = useCallback(async (region: PoshmarkRegion) => {
     if (!user) throw new Error('User not authenticated');
 
     try {
       setLoading(true);
       setError(null);
 
-      // First check if server is running
+      // Check if server is running
       const healthCheck = await fetch(`${API_URL}/api/health`, {
         method: 'GET',
         credentials: 'include',
@@ -65,12 +68,17 @@ export function usePoshmark() {
         throw new Error('Server is not running. Please start the server first.');
       }
 
+      // Import session with region
       const response = await fetch(`${API_URL}/api/poshmark/import-session`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          region,
+          useProxy: isFeatureEnabled('ENABLE_PROXY')
+        })
       });
 
       const result: ImportSessionResult = await response.json();
@@ -85,30 +93,28 @@ export function usePoshmark() {
         .insert({
           user_id: user.id,
           username: result.session.username,
+          region: result.session.region,
           session_data: result.session,
           last_verified: new Date().toISOString(),
+          is_active: true
         });
 
       if (insertError) throw insertError;
 
-      // Refresh sessions list
       await fetchSessions();
-
       return result.session;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to import session';
       setError({
         message: 'Failed to connect Poshmark account',
-        details: errorMessage,
-        code: err instanceof Error && 'errorCode' in err ? (err as any).errorCode : undefined
+        details: errorMessage
       });
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, [user, fetchSessions]);
 
-  // Verify a session
   const verifySession = useCallback(async (sessionId: string) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -116,10 +122,18 @@ export function usePoshmark() {
       setLoading(true);
       setError(null);
 
-      // Get session from local state
-      const session = sessions.find(s => s.id === sessionId);
-      if (!session) throw new Error('Session not found');
+      // Get session from database
+      const { data: sessionData, error: fetchError } = await supabase
+        .from('poshmark_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
 
+      if (fetchError || !sessionData) {
+        throw new Error('Session not found');
+      }
+
+      // Verify session with backend
       const response = await fetch(`${API_URL}/api/poshmark/verify-session`, {
         method: 'POST',
         credentials: 'include',
@@ -127,44 +141,39 @@ export function usePoshmark() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          session: session.session_data,
-        }),
+          session: sessionData.session_data,
+          region: sessionData.region,
+          useProxy: isFeatureEnabled('ENABLE_PROXY')
+        })
       });
 
       const result: VerifySessionResult = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to verify session');
-      }
 
-      // Update session verification timestamp and status
+      // Update session status
       const { error: updateError } = await supabase
         .from('poshmark_sessions')
         .update({
+          is_active: result.is_active,
           last_verified: new Date().toISOString(),
-          is_active: result.isValid,
         })
         .eq('id', sessionId);
 
       if (updateError) throw updateError;
 
-      // Refresh sessions list
       await fetchSessions();
-
-      return result.isValid;
+      return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to verify session';
       setError({
         message: 'Failed to verify Poshmark session',
         details: errorMessage
       });
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
-  }, [user, sessions, fetchSessions]);
+  }, [user, fetchSessions]);
 
-  // Remove a session
   const removeSession = useCallback(async (sessionId: string) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -179,7 +188,6 @@ export function usePoshmark() {
 
       if (deleteError) throw deleteError;
 
-      // Refresh sessions list
       await fetchSessions();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove session';
@@ -187,13 +195,12 @@ export function usePoshmark() {
         message: 'Failed to remove Poshmark account',
         details: errorMessage
       });
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, [user, fetchSessions]);
 
-  // Load sessions on mount and when user changes
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);

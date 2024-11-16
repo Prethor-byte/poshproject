@@ -14,20 +14,29 @@ export interface PoshmarkCookie {
   domain: string;
 }
 
+export type PoshmarkRegion = 'US' | 'CA';
+
 export interface PoshmarkSession {
-  cookies: PoshmarkCookie[];
-  username?: string;
+  username: string;
+  cookies: Record<string, string>;
+  region: PoshmarkRegion;
 }
 
 export interface PoshmarkSessionRecord {
   id: string;
   user_id: string;
-  username?: string;
+  username: string;
+  region: PoshmarkRegion;
   session_data: PoshmarkSession;
-  last_verified: string;
   is_active: boolean;
+  last_verified: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ImportSessionRequest {
+  region: PoshmarkRegion;
+  useProxy?: boolean;
 }
 
 export interface ImportSessionResult {
@@ -36,14 +45,14 @@ export interface ImportSessionResult {
   error?: string;
 }
 
-export interface VerifySessionResult {
-  success: boolean;
-  isValid: boolean;
-  error?: string;
+export interface VerifySessionRequest {
+  session: PoshmarkSession;
+  region: PoshmarkRegion;
+  useProxy?: boolean;
 }
 
-export interface PoshmarkLoginResult {
+export interface VerifySessionResult {
   success: boolean;
+  is_active: boolean;
   error?: string;
-  cookies?: PoshmarkCookie[];
 }
