@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { ArrowRight, Bot, Clock, DollarSign, Zap } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import { trackEvent } from "@/lib/analytics";
 import { DemoVideoModal } from "@/components/demo-video-modal";
-import { useToast } from "@/components/ui/use-toast";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +27,6 @@ const structuredData = {
 
 export function LandingPage() {
   const [showDemoVideo, setShowDemoVideo] = useState(false);
-  const { toast } = useToast();
   const pricingRef = useRef<HTMLElement>(null);
 
   // Track demo video views
