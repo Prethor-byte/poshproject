@@ -11,11 +11,16 @@ import { LandingPage } from '@/pages/landing';
 import { AccountsPage } from '@/pages/accounts';
 import { BlogPage } from '@/pages/blog';
 import { BlogPostPage } from '@/pages/blog/[slug]';
+import { SupportPage } from '@/pages/support';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <LandingPage />,
+  },
+  {
+    path: '/support',
+    element: <SupportPage />,
   },
   {
     path: '/login',
