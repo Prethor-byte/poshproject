@@ -12,7 +12,6 @@ import {
   Bars3Icon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/use-auth';
-import { useState, useEffect } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/app', icon: HomeIcon },
@@ -22,32 +21,22 @@ const navigation = [
   { name: 'Settings', href: '/app/settings', icon: CogIcon },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+  isMobile: boolean;
+}
+
+export function Sidebar({ isCollapsed, setIsCollapsed, isMobile }: SidebarProps) {
   const location = useLocation();
   const { signOut, user } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      setIsMobile(width < 1024);
-      if (width < 1024) {
-        setIsCollapsed(true);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
     <>
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          "fixed top-4 left-4 z-50 p-2 rounded-lg bg-background border-border",
+          "fixed top-4 left-4 z-50 p-2 rounded-lg bg-background border border-border",
           "hover:bg-accent hover:text-accent-foreground transition-colors duration-200",
           "lg:hidden"
         )}
@@ -64,7 +53,7 @@ export function Sidebar() {
       >
         <div className="flex h-16 shrink-0 items-center justify-between px-6">
           {!isCollapsed && (
-            <Link to="/app" className="text-xl font-semibold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">
+            <Link to="/app" className="text-xl font-semibold text-foreground">
               Poshmark
             </Link>
           )}

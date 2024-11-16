@@ -1,81 +1,91 @@
 import { useAuth } from '@/hooks/use-auth';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export function HomePage() {
   const { user } = useAuth();
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Welcome back, {user?.email}</h1>
-        <p className="text-gray-600 mt-2">Here's your Poshmark automation dashboard</p>
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Welcome back, {user?.email}</h1>
+        <p className="text-muted-foreground mt-1">Here's your Poshmark automation dashboard</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Activity Summary Card */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Activity Summary</h2>
-          <div className="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Items Listed</span>
-              <span className="font-medium">0</span>
+              <span className="text-muted-foreground">Items Listed</span>
+              <span className="font-medium text-foreground">0</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Shares Today</span>
-              <span className="font-medium">0</span>
+              <span className="text-muted-foreground">Shares Today</span>
+              <span className="font-medium text-foreground">0</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Active Listings</span>
-              <span className="font-medium">0</span>
+              <span className="text-muted-foreground">Active Listings</span>
+              <span className="font-medium text-foreground">0</span>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions Card */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-          <div className="space-y-4">
-            <button className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full" variant="default">
               Share All Listings
-            </button>
-            <button className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
+            </Button>
+            <Button className="w-full" variant="default">
               Update Prices
-            </button>
-            <button className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
+            </Button>
+            <Button className="w-full" variant="default">
               Add New Listing
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Recent Activity Card */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="text-gray-500 text-center py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-muted-foreground text-center py-8">
               No recent activity
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Analytics Section */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Analytics Overview</h2>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <h3 className="text-gray-600">Total Revenue</h3>
-              <p className="text-2xl font-bold mt-2">$0.00</p>
+      <div>
+        <h2 className="text-xl font-semibold text-foreground mb-4">Analytics Overview</h2>
+        <Card>
+          <CardContent className="py-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <h3 className="text-muted-foreground">Total Revenue</h3>
+                <p className="text-2xl font-bold text-foreground mt-2">$0.00</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-muted-foreground">Average Price</h3>
+                <p className="text-2xl font-bold text-foreground mt-2">$0.00</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-muted-foreground">Total Sales</h3>
+                <p className="text-2xl font-bold text-foreground mt-2">0</p>
+              </div>
             </div>
-            <div className="text-center">
-              <h3 className="text-gray-600">Average Price</h3>
-              <p className="text-2xl font-bold mt-2">$0.00</p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-gray-600">Total Sales</h3>
-              <p className="text-2xl font-bold mt-2">0</p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
