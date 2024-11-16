@@ -9,6 +9,8 @@ import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
 import { LandingPage } from '@/pages/landing';
 import { AccountsPage } from '@/pages/accounts';
+import { BlogPage } from '@/pages/blog';
+import { BlogPostPage } from '@/pages/blog/[slug]';
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +24,14 @@ export const router = createBrowserRouter([
   {
     path: '/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/blog',
+    element: <BlogPage />,
+  },
+  {
+    path: '/blog/:slug',
+    element: <BlogPostPage />,
   },
   {
     path: '/app',
