@@ -11,9 +11,10 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only redirect if we're not coming from a protected page
-    if (session && location.state?.from !== '/app') {
-      navigate('/app');
+    if (session) {
+      // Navigate to the protected page they tried to visit or /app
+      const from = location.state?.from || '/app';
+      navigate(from);
     }
   }, [session, navigate, location]);
 
