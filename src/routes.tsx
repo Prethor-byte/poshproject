@@ -8,7 +8,7 @@ import { SharePage } from '@/pages/share';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
 import { LandingPage } from '@/pages/landing';
-import { AccountsPage } from '@/pages/accounts';
+import { AccountsPage } from '@/pages/app/accounts';
 import { BlogPage } from '@/pages/blog';
 import { BlogPostPage } from '@/pages/blog/[slug]';
 import { SupportPage } from '@/pages/support';
