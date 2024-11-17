@@ -13,6 +13,7 @@ import { BlogPostPage } from '@/pages/blog/[slug]';
 import { SupportPage } from '@/pages/support';
 import { DashboardPage } from '@/pages/app/dashboard';
 import { SettingsPage } from '@/pages/app/settings';
+import { ProfilePage } from '@/pages/app/profile';
 
 export const router = createBrowserRouter([
   {
@@ -57,7 +58,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'profile',
-        element: <div>Profile Page</div>,
+        element: <ProfilePage />,
       },
       {
         path: 'settings',
