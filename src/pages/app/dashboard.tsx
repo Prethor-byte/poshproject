@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/use-auth';
 
-export function HomePage() {
+export function DashboardPage() {
   const { user } = useAuth();
 
   return (

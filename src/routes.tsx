@@ -3,8 +3,7 @@ import { Layout } from '@/components/layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // Pages
-import { HomePage } from '@/pages/home';
-import { SharePage } from '@/pages/share';
+import { SharePage } from '@/pages/app/share';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
 import { LandingPage } from '@/pages/landing';
@@ -12,6 +11,8 @@ import { AccountsPage } from '@/pages/app/accounts';
 import { BlogPage } from '@/pages/blog';
 import { BlogPostPage } from '@/pages/blog/[slug]';
 import { SupportPage } from '@/pages/support';
+import { DashboardPage } from '@/pages/app/dashboard';
+import { SettingsPage } from '@/pages/app/settings';
 
 export const router = createBrowserRouter([
   {
@@ -48,7 +49,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <DashboardPage />,
       },
       {
         path: 'share',
@@ -60,7 +61,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: <div>Settings Page</div>,
+        element: <SettingsPage />,
       },
       {
         path: 'accounts',
