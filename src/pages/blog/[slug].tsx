@@ -36,7 +36,6 @@ export function BlogPostPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [readingProgress, setReadingProgress] = useState(0);
-  const [toc, setToc] = useState<TableOfContentsItem[]>([]);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const post = blogPosts.find(p => p.slug === slug);
 
@@ -52,15 +51,6 @@ export function BlogPostPage() {
       post_title: post.title,
       category: post.category.name
     });
-
-    // Generate table of contents
-    const headings = Array.from(document.querySelectorAll('h2, h3'))
-      .map(heading => ({
-        id: heading.id,
-        title: heading.textContent || '',
-        level: parseInt(heading.tagName[1])
-      }));
-    setToc(headings);
 
     // Setup scroll progress tracking
     const handleScroll = () => {
@@ -233,70 +223,6 @@ export function BlogPostPage() {
           </div>
         </header>
 
-        {/* Table of Contents */}
-        {toc.length > 0 && (
-          <nav className="hidden lg:block fixed right-[max(0px,calc(50%-45rem))] top-[3.8125rem] w-[19rem] py-10">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-50 mb-4">Table of Contents</h2>
-            <ul className="space-y-2.5">
-              {toc.map((item, index) => (
-                <li key={index}>
-                  <a
-                    href={`#${item.id}`}
-                    className={`block text-sm ${
-                      item.level === 2 
-                        ? 'text-gray-700 dark:text-gray-300' 
-                        : 'text-gray-500 dark:text-gray-400 pl-4'
-                    } hover:text-primary transition-colors`}
-                  >
-                    {item.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
-
-        {/* Share Button */}
-        <div className="fixed bottom-8 right-8">
-          <div className="relative">
-            <button
-              onClick={() => setShowShareMenu(!showShareMenu)}
-              className="p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
-
-            {showShareMenu && (
-              <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-2 min-w-[200px]">
-                <button
-                  onClick={() => handleShare('twitter')}
-                  className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                >
-                  <Twitter className="w-5 h-5" /> Twitter
-                </button>
-                <button
-                  onClick={() => handleShare('facebook')}
-                  className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                >
-                  <Facebook className="w-5 h-5" /> Facebook
-                </button>
-                <button
-                  onClick={() => handleShare('linkedin')}
-                  className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                >
-                  <Linkedin className="w-5 h-5" /> LinkedIn
-                </button>
-                <button
-                  onClick={() => handleShare('copy')}
-                  className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                >
-                  <Copy className="w-5 h-5" /> Copy Link
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -322,6 +248,47 @@ export function BlogPostPage() {
           </div>
         </div>
       </article>
+
+      {/* Share Button */}
+      <div className="fixed bottom-8 right-8">
+        <div className="relative">
+          <button
+            onClick={() => setShowShareMenu(!showShareMenu)}
+            className="p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+
+          {showShareMenu && (
+            <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-2 min-w-[200px]">
+              <button
+                onClick={() => handleShare('twitter')}
+                className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <Twitter className="w-5 h-5" /> Twitter
+              </button>
+              <button
+                onClick={() => handleShare('facebook')}
+                className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <Facebook className="w-5 h-5" /> Facebook
+              </button>
+              <button
+                onClick={() => handleShare('linkedin')}
+                className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <Linkedin className="w-5 h-5" /> LinkedIn
+              </button>
+              <button
+                onClick={() => handleShare('copy')}
+                className="flex items-center gap-3 w-full p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <Copy className="w-5 h-5" /> Copy Link
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </PublicLayout>
   );
 }

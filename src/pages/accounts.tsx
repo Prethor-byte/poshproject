@@ -58,12 +58,12 @@ export function AccountsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Poshmark Accounts</h1>
+    <div className="px-4 sm:container sm:mx-auto py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold">Poshmark Accounts</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Connect Account</Button>
+            <Button className="w-full sm:w-auto">Connect Account</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -87,10 +87,10 @@ export function AccountsPage() {
               </Select>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button onClick={handleConnect} disabled={loading}>
+              <Button onClick={handleConnect} disabled={loading} className="w-full sm:w-auto">
                 {loading ? 'Connecting...' : 'Connect'}
               </Button>
             </DialogFooter>
@@ -100,14 +100,14 @@ export function AccountsPage() {
 
       {/* Error Alert */}
       {error && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-2 sm:mb-4">
           <XCircle className="h-4 w-4" />
           <AlertTitle>{error.message}</AlertTitle>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={clearError}
-            className="mt-2"
+            className="mt-2 w-full sm:w-auto"
           >
             Dismiss
           </Button>
@@ -115,11 +115,11 @@ export function AccountsPage() {
       )}
 
       {/* Sessions List */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {sessions.map((session) => (
-          <Card key={session.id} className="p-4 space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
+          <Card key={session.id} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+              <div className="w-full sm:w-auto">
                 <h3 className="font-semibold">{session.username}</h3>
                 <p className="text-sm text-muted-foreground">
                   Connected {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
@@ -128,7 +128,7 @@ export function AccountsPage() {
                   Region: {session.region === 'US' ? 'United States' : 'Canada'}
                 </p>
               </div>
-              <div className={`px-2 py-1 rounded-full text-xs ${
+              <div className={`px-2 py-1 rounded-full text-xs w-full sm:w-auto text-center ${
                 session.is_active 
                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
@@ -141,12 +141,13 @@ export function AccountsPage() {
               Last verified: {formatDistanceToNow(new Date(session.last_verified), { addSuffix: true })}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => handleVerify(session.id)}
                 disabled={loading}
+                className="w-full sm:w-auto"
               >
                 Verify
               </Button>
@@ -155,6 +156,7 @@ export function AccountsPage() {
                 size="sm"
                 onClick={() => handleRemove(session.id)}
                 disabled={loading}
+                className="w-full sm:w-auto"
               >
                 Remove
               </Button>
@@ -165,12 +167,12 @@ export function AccountsPage() {
 
       {/* Empty State */}
       {!loading && sessions.length === 0 && (
-        <Card className="p-8 text-center">
+        <Card className="p-4 sm:p-8 text-center">
           <h3 className="text-lg font-semibold mb-2">No Accounts Connected</h3>
           <p className="text-gray-600 mb-4">
             Connect your Poshmark account to start automating your closet.
           </p>
-          <Button onClick={() => setIsDialogOpen(true)}>Connect Account</Button>
+          <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">Connect Account</Button>
         </Card>
       )}
     </div>
