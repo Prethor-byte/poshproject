@@ -1,28 +1,107 @@
 # Poshmark Automation Tool - Design Document
 
-## Project Overview
-A cloud-based Poshmark automation tool that streamlines reseller tasks through intelligent web automation. The system provides reliable, scalable, and secure automation for sharing, following, and listing management.
+## Current Progress (Updated)
+
+### Completed Features
+1. **Core Infrastructure**
+   - Project setup with Vite + React
+   - Supabase integration
+   - Basic authentication flow
+   - Database schema
+
+2. **Automation Engine**
+   - Playwright setup
+   - Basic sharing functionality
+   - Login flow handling
+   - CAPTCHA integration
+
+3. **Frontend**
+   - Basic dashboard UI
+   - Settings management
+   - Task creation interface
+
+### Next Sprint (2 Weeks)
+
+#### Week 1: Core Automation
+1. **Sharing Enhancement**
+   - Reliable closet sharing
+   - Smart delays
+   - Error recovery
+   - Progress tracking
+
+2. **Task Management**
+   - Queue system
+   - Priority handling
+   - Concurrent task limits
+   - Status monitoring
+
+#### Week 2: User Experience
+1. **Dashboard**
+   - Real-time status updates
+   - Activity logs
+   - Error notifications
+   - Basic analytics
+
+2. **Settings**
+   - Schedule configuration
+   - Automation rules
+   - Security settings
+   - Account management
+
+### MVP Features
+
+#### Essential (Launch Requirements)
+1. **Automation**
+   - Closet sharing
+   - Follow/unfollow
+   - Basic scheduling
+   - Error handling
+
+2. **User Management**
+   - Secure authentication
+   - Poshmark credentials
+   - Basic profile management
+   - Usage tracking
+
+3. **Monitoring**
+   - Task status
+   - Success/failure tracking
+   - Basic analytics
+   - Error reporting
+
+#### Nice to Have (Post-Launch)
+1. **Advanced Automation**
+   - Smart pricing
+   - Bulk listing
+   - Auto-relisting
+   - Offer management
+
+2. **Analytics**
+   - Sharing impact
+   - Best times to share
+   - Follower growth
+   - Sales correlation
 
 ## Tech Stack
 
 ### Frontend
 - React + Vite
 - TailwindCSS + shadcn/ui
-- React Query for data fetching
-- Zustand for state management
-- React Hook Form + Zod for form validation
+- React Query
+- Zustand
+- React Hook Form + Zod
 
 ### Backend
 - Node.js + Express
-- Playwright for web automation
-- Supabase (PostgreSQL + Auth)
-- Redis for caching and rate limiting
-- Bull for job queues
+- Playwright
+- Supabase
+- Redis
+- Bull
 
 ### Infrastructure
-- Render for hosting
-- Sentry for error tracking
-- 2captcha for CAPTCHA handling
+- Render
+- Sentry
+- 2captcha
 
 ## System Architecture
 
@@ -58,7 +137,7 @@ src/
 
 ### Database Schema
 
-\`\`\`sql
+```sql
 -- Users
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -100,202 +179,72 @@ CREATE TABLE task_results (
 CREATE TABLE browser_profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
-    user_agent TEXT NOT NULL,
-    viewport JSONB NOT NULL,
-    timezone TEXT NOT NULL,
-    last_used TIMESTAMPTZ,
-    success_rate DECIMAL(5,2),
-    CONSTRAINT valid_success_rate CHECK (success_rate >= 0 AND success_rate <= 100)
-);
-
--- Sessions
-CREATE TABLE user_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id),
-    poshmark_session_id TEXT,
-    cookies JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    expires_at TIMESTAMPTZ,
     last_used TIMESTAMPTZ,
-    is_valid BOOLEAN DEFAULT true
+    status TEXT DEFAULT 'active',
+    metadata JSONB DEFAULT '{}'::jsonb
 );
-
--- Rate Limits
-CREATE TABLE rate_limits (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id),
-    action_type TEXT NOT NULL,
-    last_action TIMESTAMPTZ DEFAULT NOW(),
-    count INTEGER DEFAULT 0
-);
-\`\`\`
-
-## Core Features
-
-### Authentication
-- Supabase Auth integration
-- Secure credential storage
-- Session management
-- MFA support
-
-### Task Management
-- Priority queue system
-- Configurable retry strategies
-- Error recovery procedures
-- Rate limiting
-
-### Automation Features
-1. Sharing
-   - Closet sharing
-   - Party sharing
-   - Scheduled sharing
-   - Random delays
-
-2. Following
-   - Target user following
-   - Unfollowing
-   - Daily limits
-   - Smart targeting
-
-3. Analytics
-   - Success rates
-   - Action history
-   - Performance metrics
-   - Error tracking
-
-### Security
-- Encrypted credentials
-- IP rotation
-- Browser fingerprint management
-- Rate limit protection
-- Audit logging
-
-## Implementation Details
-
-### Task Queue Priority System
-```typescript
-enum TaskPriority {
-  HIGH = 1,    // User-initiated
-  MEDIUM = 2,  // Scheduled
-  LOW = 3      // Background
-}
-
-interface TaskConfig {
-  priority: TaskPriority;
-  maxRetries: number;
-  timeout: number;
-}
 ```
 
-### Browser Automation
-```typescript
-interface BrowserProfile {
-  userAgent: string;
-  viewport: {
-    width: number;
-    height: number;
-  };
-  timezone: string;
-  geolocation?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+### Pricing Strategy
 
-interface AutomationSession {
-  browserProfile: BrowserProfile;
-  cookies: Record<string, string>;
-  sessionId: string;
-}
-```
+#### Free Tier
+- 100 shares/day
+- Basic scheduling
+- Single account
+- Community support
 
-### Error Handling
-```typescript
-interface RetryStrategy {
-  maxAttempts: number;
-  baseDelay: number;
-  maxDelay: number;
-  backoffFactor: number;
-}
+#### Pro Tier ($29/month)
+- Unlimited shares
+- Advanced scheduling
+- Priority support
+- Analytics
+- Multiple accounts
 
-enum ErrorType {
-  RATE_LIMIT = 'RATE_LIMIT',
-  SESSION_EXPIRED = 'SESSION_EXPIRED',
-  CAPTCHA = 'CAPTCHA',
-  NETWORK = 'NETWORK'
-}
-```
+#### Business Tier ($79/month)
+- Everything in Pro
+- Bulk operations
+- API access
+- Team management
+- Custom solutions
 
-## Development Phases
+## Development Timeline
 
-### Phase 1: Foundation (2 weeks)
-- Project setup
-- Authentication implementation
-- Database setup
-- Basic UI structure
+### Phase 1: MVP (4 Weeks)
+- Core automation
+- Basic dashboard
+- Essential features
+- Initial testing
 
-### Phase 2: Core Automation (3 weeks)
-- Playwright integration
-- Task management system
-- Error handling
-- Session management
-
-### Phase 3: Features (2 weeks)
-- Sharing automation
-- Following automation
-- Analytics dashboard
-- Settings management
-
-### Phase 4: Polish (1 week)
-- Testing
+### Phase 2: Enhancement (4 Weeks)
+- Advanced features
+- Analytics
 - Performance optimization
-- Security hardening
-- Documentation
+- User feedback
 
-## Monitoring & Maintenance
+### Phase 3: Scale (4 Weeks)
+- Multi-account support
+- API development
+- Advanced automation
+- Business features
 
-### Error Tracking
-- Sentry integration
-- Error categorization
-- Automated alerts
-- Recovery procedures
+## Security Measures
+1. Encrypted credentials
+2. Rate limiting
+3. IP rotation
+4. Session management
+5. Access controls
 
-### Performance Monitoring
-- Response times
-- Success rates
-- Resource usage
-- User metrics
+## Monitoring
+1. Task success rates
+2. System performance
+3. Error tracking
+4. User engagement
+5. Resource usage
 
-### Security Monitoring
-- Rate limit tracking
-- Suspicious activity detection
-- Session monitoring
-- Access logs
-
-## Deployment Strategy
-
-### Development
-1. Local development environment
-2. Automated testing
-3. Code quality checks
-4. Security scanning
-
-### Staging
-1. Staging environment deployment
-2. Integration testing
-3. Performance testing
-4. Security audits
-
-### Production
-1. Production deployment
-2. Monitoring setup
-3. Backup configuration
-4. Scaling rules
-
-## Future Enhancements
-1. Cross-listing support
-2. Bulk listing creation
-3. Price optimization
-4. Inventory management
-5. Advanced analytics
-6. Mobile app integration
+## Next Steps
+1. Complete core automation
+2. Enhance dashboard
+3. Implement monitoring
+4. Begin user testing
+5. Prepare for launch
