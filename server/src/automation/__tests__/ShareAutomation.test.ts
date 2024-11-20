@@ -46,11 +46,16 @@ describe('ShareAutomation', () => {
 
   describe('initialize', () => {
     it('should successfully initialize and login', async () => {
-      const mockElement = {
-        isVisible: jest.fn().mockResolvedValue(true),
-      } as unknown as ElementHandle;
-
-      mockPage.$.mockResolvedValue(mockElement);
+      // Mock successful login
+      mockPage.$.mockImplementation(async (selector: string) => {
+        if (selector === '[data-testid="captcha"]') {
+          return null;
+        }
+        if (selector === '[data-testid="user-profile"]') {
+          return { isVisible: jest.fn().mockResolvedValue(true) } as unknown as ElementHandle;
+        }
+        return null;
+      });
 
       await shareAutomation.initialize();
       
@@ -60,15 +65,11 @@ describe('ShareAutomation', () => {
     });
 
     it('should handle CAPTCHA detection', async () => {
-      const mockCaptchaElement = {
-        isVisible: jest.fn().mockResolvedValue(true),
-      } as unknown as ElementHandle;
-
-      mockPage.$.mockImplementation((selector: string) => {
+      mockPage.$.mockImplementation(async (selector: string) => {
         if (selector === '[data-testid="captcha"]') {
-          return Promise.resolve(mockCaptchaElement);
+          return { isVisible: jest.fn().mockResolvedValue(true) } as unknown as ElementHandle;
         }
-        return Promise.resolve(null);
+        return null;
       });
 
       await expect(shareAutomation.initialize()).rejects.toThrow(
@@ -77,7 +78,56 @@ describe('ShareAutomation', () => {
     });
 
     it('should handle login failure', async () => {
-      mockPage.$.mockResolvedValue(null);
+      mockPage.$.mockImplementation(async (selector: string) => {
+        if (selector === '[data-testid="captcha"]') {
+          return null;
+        }
+        if (selector === '[data-testid="user-profile"]') {
+          return { isVisible: jest.fn().mockResolvedValue(false) } as unknown as ElementHandle;
+        }
+        return null;
+      });
+
+      await expect(shareAutomation.initialize()).rejects.toThrow(
+        new AutomationError('Login failed', ErrorType.AUTH_FAILED)
+      );
+    });
+
+    it('should handle browser creation failure', async () => {
+      // Mock BrowserManager.createSession to throw immediately
+      const mockBrowserManager = {
+        createSession: jest.fn().mockRejectedValue(new Error('Failed to create browser')),
+      };
+      (BrowserManager.getInstance as jest.Mock).mockReturnValue(mockBrowserManager);
+
+      // Mock page and browser to verify they're not used
+      const mockPage = { close: jest.fn() };
+      const mockBrowser = { close: jest.fn() };
+
+      // Create a new instance for this test to avoid interference
+      const localShareAutomation = new ShareAutomation({ username: 'testuser' });
+
+      await expect(localShareAutomation.initialize()).rejects.toThrow(
+        'Initialization failed'
+      );
+
+      expect(mockBrowserManager.createSession).toHaveBeenCalled();
+      expect(mockPage.close).not.toHaveBeenCalled();
+      expect(mockBrowser.close).not.toHaveBeenCalled();
+    });
+
+    it('should handle navigation failure', async () => {
+      mockPage.$.mockImplementation(async (selector: string) => {
+        if (selector === '[data-testid="captcha"]') {
+          return null;
+        }
+        if (selector === '[data-testid="user-profile"]') {
+          return { isVisible: jest.fn().mockResolvedValue(true) } as unknown as ElementHandle;
+        }
+        return null;
+      });
+
+      mockPage.goto.mockRejectedValueOnce(new Error('Navigation failed'));
 
       await expect(shareAutomation.initialize()).rejects.toThrow(
         new AutomationError('Login failed', ErrorType.AUTH_FAILED)
@@ -87,16 +137,25 @@ describe('ShareAutomation', () => {
 
   describe('shareCloset', () => {
     beforeEach(async () => {
-      const mockElement = {
-        isVisible: jest.fn().mockResolvedValue(true),
-      } as unknown as ElementHandle;
-      mockPage.$.mockResolvedValue(mockElement);
+      // Mock successful login
+      mockPage.$.mockImplementation(async (selector: string) => {
+        if (selector === '[data-testid="captcha"]') {
+          return null;
+        }
+        if (selector === '[data-testid="user-profile"]') {
+          return { isVisible: jest.fn().mockResolvedValue(true) } as unknown as ElementHandle;
+        }
+        return null;
+      });
+
       await shareAutomation.initialize();
     });
 
     it('should successfully share items', async () => {
       const mockItems = Array(3).fill(null).map(() => ({
-        click: jest.fn(),
+        $: jest.fn().mockResolvedValue({
+          click: jest.fn(),
+        }),
       } as unknown as ElementHandle));
 
       mockPage.$$.mockResolvedValue(mockItems);
@@ -122,9 +181,9 @@ describe('ShareAutomation', () => {
 
     it('should handle sharing errors', async () => {
       const mockItems = [{
-        click: jest.fn().mockRejectedValue(
-          new Error('Failed to share item')
-        ),
+        $: jest.fn().mockResolvedValue({
+          click: jest.fn().mockRejectedValue(new Error('Failed to share item')),
+        }),
       } as unknown as ElementHandle];
 
       mockPage.$$.mockResolvedValue(mockItems);
@@ -136,7 +195,9 @@ describe('ShareAutomation', () => {
 
     it('should respect maxItems limit', async () => {
       const mockItems = Array(6).fill(null).map(() => ({
-        click: jest.fn(),
+        $: jest.fn().mockResolvedValue({
+          click: jest.fn(),
+        }),
       } as unknown as ElementHandle));
 
       mockPage.$$.mockResolvedValue(mockItems);
@@ -145,9 +206,61 @@ describe('ShareAutomation', () => {
 
       expect(result).toBe(5); // Should only share maxItems (5)
     });
+
+    it('should handle navigation failure to closet', async () => {
+      mockPage.goto.mockRejectedValueOnce(new Error('Navigation failed'));
+
+      await expect(shareAutomation.shareCloset()).rejects.toThrow(
+        new AutomationError('Share automation failed', ErrorType.UNKNOWN)
+      );
+    });
+
+    it('should handle failure to find closet items', async () => {
+      mockPage.waitForSelector.mockRejectedValueOnce(new Error('Selector not found'));
+
+      await expect(shareAutomation.shareCloset()).rejects.toThrow(
+        new AutomationError('Share automation failed', ErrorType.UNKNOWN)
+      );
+    });
+
+    it('should handle missing share button', async () => {
+      const mockItems = [{
+        $: jest.fn().mockResolvedValue(null),
+      } as unknown as ElementHandle];
+
+      mockPage.$$.mockResolvedValue(mockItems);
+
+      const result = await shareAutomation.shareCloset();
+
+      expect(result).toBe(0);
+    });
+
+    it('should handle not being logged in', async () => {
+      // Force not logged in state
+      await shareAutomation.cleanup();
+
+      await expect(shareAutomation.shareCloset()).rejects.toThrow(
+        new AutomationError('Not logged in', ErrorType.AUTH_FAILED)
+      );
+    });
   });
 
   describe('cleanup', () => {
+    beforeEach(async () => {
+      // Mock successful login
+      mockPage.$.mockImplementation(async (selector: string) => {
+        if (selector === '[data-testid="captcha"]') {
+          return null;
+        }
+        if (selector === '[data-testid="user-profile"]') {
+          return { isVisible: jest.fn().mockResolvedValue(true) } as unknown as ElementHandle;
+        }
+        return null;
+      });
+
+      await shareAutomation.initialize();
+    });
+
     it('should properly clean up resources', async () => {
       await shareAutomation.cleanup();
 
@@ -160,6 +273,14 @@ describe('ShareAutomation', () => {
       mockBrowser.close.mockRejectedValue(new Error('Failed to close'));
 
       await expect(shareAutomation.cleanup()).resolves.not.toThrow();
+    });
+
+    it('should handle cleanup when resources are already null', async () => {
+      await shareAutomation.cleanup(); // First cleanup
+      await shareAutomation.cleanup(); // Second cleanup should not throw
+
+      expect(mockPage.close).toHaveBeenCalledTimes(1);
+      expect(mockBrowser.close).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -15,16 +15,18 @@ jest.mock('../automation/utils/logger', () => ({
   },
 }));
 
-// Extend Jest timeout for Playwright operations
-jest.setTimeout(30000);
+beforeAll(() => {
+  // Set up test environment variables
+  process.env.POSHMARK_PASSWORD = 'test-password';
+  process.env.NODE_ENV = 'test';
+  process.env.LOG_LEVEL = 'error';
+});
 
-// Mock environment variables
-process.env.NODE_ENV = 'test';
-process.env.LOG_LEVEL = 'error';
-
-// Global teardown
 afterAll(async () => {
   // Clean up any remaining browser sessions
-  const BrowserManager = require('../automation/utils/BrowserManager').BrowserManager;
-  await BrowserManager.getInstance().closeAllSessions();
+  const { BrowserManager } = require('../automation/utils/BrowserManager');
+  const manager = BrowserManager.getInstance();
+  if (manager && typeof manager.closeAllSessions === 'function') {
+    await manager.closeAllSessions();
+  }
 });

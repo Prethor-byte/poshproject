@@ -26,18 +26,32 @@ export class ShareAutomation {
       retryAttempts: 3,
       ...config
     };
-    this.browserManager = new BrowserManager();
+    this.browserManager = BrowserManager.getInstance();
   }
 
   async initialize(): Promise<void> {
+    let sessionCreated = false;
     try {
       const profile = await createBrowserProfile();
       const { browser, page } = await this.browserManager.createSession(profile);
+      sessionCreated = true;
       this.browser = browser;
       this.page = page;
-      await this.login();
+      try {
+        await this.login();
+      } catch (loginError) {
+        await this.cleanup();
+        throw loginError;
+      }
     } catch (error) {
       logger.error('Failed to initialize share automation', { error });
+      // Only cleanup if session was created
+      if (sessionCreated) {
+        await this.cleanup();
+      }
+      if (error instanceof AutomationError) {
+        throw error;
+      }
       throw new AutomationError('Initialization failed', ErrorType.SETUP_FAILED);
     }
   }
@@ -56,13 +70,13 @@ export class ShareAutomation {
 
       // Check for CAPTCHA
       const captcha = await this.page.$('[data-testid="captcha"]');
-      if (captcha) {
+      if (captcha && await captcha.isVisible()) {
         throw new AutomationError('CAPTCHA detected', ErrorType.CAPTCHA);
       }
 
       // Verify login success
       const loggedIn = await this.page.$('[data-testid="user-profile"]');
-      if (!loggedIn) {
+      if (!loggedIn || !(await loggedIn.isVisible())) {
         throw new AutomationError('Login failed', ErrorType.AUTH_FAILED);
       }
 
@@ -70,10 +84,10 @@ export class ShareAutomation {
       logger.info('Successfully logged in to Poshmark');
     } catch (error) {
       logger.error('Login failed', { error });
-      throw new AutomationError(
-        error instanceof AutomationError ? error.message : 'Login failed',
-        error instanceof AutomationError ? error.type : ErrorType.AUTH_FAILED
-      );
+      if (error instanceof AutomationError) {
+        throw error;
+      }
+      throw new AutomationError('Login failed', ErrorType.AUTH_FAILED);
     }
   }
 
@@ -99,7 +113,10 @@ export class ShareAutomation {
           if (shareButton) {
             await shareButton.click();
             sharedCount++;
-            await this.randomDelay();
+            await this.randomDelay(
+              this.config.delayBetweenShares[0],
+              this.config.delayBetweenShares[1]
+            );
           }
         } catch (error) {
           logger.warn(`Failed to share item ${sharedCount + 1}`, { error });
@@ -126,15 +143,15 @@ export class ShareAutomation {
     try {
       if (this.page) {
         await this.page.close();
+        this.page = null;
       }
       if (this.browser) {
         await this.browser.close();
+        this.browser = null;
       }
     } catch (error) {
       logger.error('Cleanup failed', { error });
     } finally {
-      this.page = null;
-      this.browser = null;
       this.isLoggedIn = false;
     }
   }
