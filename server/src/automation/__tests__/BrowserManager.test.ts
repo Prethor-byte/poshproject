@@ -1,9 +1,7 @@
-import { Browser, BrowserContext, chromium } from 'playwright';
+import { Browser, BrowserContext, Page, chromium } from 'playwright';
 import { BrowserManager } from '../utils/BrowserManager';
-import { BrowserProfile } from '../utils/browserProfile';
 import { AutomationError, ErrorType } from '../utils/errors';
 
-// Mock Playwright
 jest.mock('playwright', () => ({
   chromium: {
     launch: jest.fn(),
@@ -14,13 +12,10 @@ describe('BrowserManager', () => {
   let browserManager: BrowserManager;
   let mockBrowser: jest.Mocked<Browser>;
   let mockContext: jest.Mocked<BrowserContext>;
-  let mockProfile: BrowserProfile;
 
   beforeEach(() => {
-    // Reset mocks
     jest.clearAllMocks();
 
-    // Create mock browser and context
     mockContext = {
       newPage: jest.fn(),
       close: jest.fn(),
@@ -33,71 +28,71 @@ describe('BrowserManager', () => {
       close: jest.fn(),
     } as unknown as jest.Mocked<Browser>;
 
-    // Mock chromium.launch
-    (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
-
-    // Create test profile
-    mockProfile = {
-      id: 'test-profile',
-      userAgent: 'test-agent',
-      viewport: { width: 1920, height: 1080 },
-      timezone: 'America/New_York',
-      geolocation: { latitude: 40.7128, longitude: -74.0060 },
-    };
-
-    // Initialize BrowserManager
     browserManager = BrowserManager.getInstance();
   });
 
   describe('createSession', () => {
     it('should create a new browser session', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
 
-      const { browser, page } = await browserManager.createSession(mockProfile);
+      const profile = {
+        id: 'test-profile',
+        userAgent: 'test-agent',
+        viewport: { width: 1920, height: 1080 },
+        timezone: 'America/New_York',
+        geolocation: { latitude: 40.7128, longitude: -74.0060 },
+      };
+
+      const { browser, page } = await browserManager.createSession(profile);
 
       expect(chromium.launch).toHaveBeenCalledWith({
-        headless: true,
-        args: expect.arrayContaining([
+        headless: false,
+        args: [
           '--disable-dev-shm-usage',
           '--no-sandbox',
-        ]),
-      });
-
-      expect(mockBrowser.newContext).toHaveBeenCalledWith({
-        userAgent: mockProfile.userAgent,
-        viewport: mockProfile.viewport,
-        locale: 'en-US',
-        timezoneId: mockProfile.timezone,
-        geolocation: mockProfile.geolocation,
-        permissions: ['geolocation'],
+          '--disable-setuid-sandbox',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+        ],
       });
 
       expect(browser).toBeDefined();
       expect(page).toBeDefined();
+      expect(mockBrowser.newContext).toHaveBeenCalledWith({
+        userAgent: profile.userAgent,
+        viewport: profile.viewport,
+        locale: 'en-US',
+        timezoneId: profile.timezone,
+        geolocation: profile.geolocation,
+        permissions: ['geolocation'],
+      });
     });
 
     it('should handle browser launch failures', async () => {
       (chromium.launch as jest.Mock).mockRejectedValue(new Error('Launch failed'));
 
-      await expect(browserManager.createSession(mockProfile))
+      await expect(browserManager.createSession({} as any))
         .rejects
         .toThrow(new AutomationError('Browser session creation failed', ErrorType.SETUP_FAILED));
     });
 
     it('should handle context creation failures', async () => {
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
       mockBrowser.newContext.mockRejectedValue(new Error('Context creation failed'));
 
-      await expect(browserManager.createSession(mockProfile))
+      await expect(browserManager.createSession({} as any))
         .rejects
         .toThrow(new AutomationError('Browser session creation failed', ErrorType.SETUP_FAILED));
     });
 
     it('should set up request interception', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
 
-      await browserManager.createSession(mockProfile);
+      await browserManager.createSession({} as any);
 
       expect(mockContext.route).toHaveBeenCalled();
     });
@@ -105,11 +100,12 @@ describe('BrowserManager', () => {
 
   describe('closeSession', () => {
     it('should close an existing session', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
 
-      await browserManager.createSession(mockProfile);
-      await browserManager.closeSession(mockProfile.id);
+      await browserManager.createSession({ id: 'test' } as any);
+      await browserManager.closeSession('test');
 
       expect(mockContext.close).toHaveBeenCalled();
       expect(mockBrowser.close).toHaveBeenCalled();
@@ -123,13 +119,14 @@ describe('BrowserManager', () => {
     });
 
     it('should handle closure errors', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
       mockContext.close.mockRejectedValue(new Error('Close failed'));
       mockBrowser.close.mockRejectedValue(new Error('Close failed'));
 
-      await browserManager.createSession(mockProfile);
-      await expect(browserManager.closeSession(mockProfile.id))
+      await browserManager.createSession({ id: 'test' } as any);
+      await expect(browserManager.closeSession('test'))
         .resolves
         .not
         .toThrow();
@@ -138,12 +135,13 @@ describe('BrowserManager', () => {
 
   describe('closeAllSessions', () => {
     it('should close all active sessions', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
 
       // Create multiple sessions
-      await browserManager.createSession({ ...mockProfile, id: 'profile1' });
-      await browserManager.createSession({ ...mockProfile, id: 'profile2' });
+      await browserManager.createSession({ id: 'test1' } as any);
+      await browserManager.createSession({ id: 'test2' } as any);
 
       await browserManager.closeAllSessions();
 
@@ -152,14 +150,15 @@ describe('BrowserManager', () => {
     });
 
     it('should handle closure errors in multiple sessions', async () => {
-      const mockPage = { goto: jest.fn() };
-      mockContext.newPage.mockResolvedValue(mockPage as any);
+      const mockPage = { goto: jest.fn() } as unknown as Page;
+      mockContext.newPage.mockResolvedValue(mockPage);
+      (chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
       mockContext.close.mockRejectedValue(new Error('Close failed'));
       mockBrowser.close.mockRejectedValue(new Error('Close failed'));
 
       // Create multiple sessions
-      await browserManager.createSession({ ...mockProfile, id: 'profile1' });
-      await browserManager.createSession({ ...mockProfile, id: 'profile2' });
+      await browserManager.createSession({ id: 'test1' } as any);
+      await browserManager.createSession({ id: 'test2' } as any);
 
       await expect(browserManager.closeAllSessions())
         .resolves

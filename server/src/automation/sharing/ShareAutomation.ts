@@ -94,19 +94,13 @@ export class ShareAutomation {
 
       for (const item of itemsToShare) {
         try {
-          // Open share modal
-          await item.click('[data-testid="share-button"]');
-          await this.page.waitForSelector('[data-testid="share-modal"]');
-
-          // Click share to followers
-          await this.page.click('[data-testid="share-to-followers"]');
-          
-          sharedCount++;
-          logger.info(`Shared item ${sharedCount}/${itemsToShare.length}`);
-
-          // Random delay between shares
-          const [min, max] = this.config.delayBetweenShares;
-          await randomDelay(min, max);
+          // Find and click the share button
+          const shareButton = await item.$('[data-testid="share-button"]');
+          if (shareButton) {
+            await shareButton.click();
+            sharedCount++;
+            await this.randomDelay();
+          }
         } catch (error) {
           logger.warn(`Failed to share item ${sharedCount + 1}`, { error });
           continue;
@@ -121,6 +115,11 @@ export class ShareAutomation {
         error instanceof AutomationError ? error.type : ErrorType.UNKNOWN
       );
     }
+  }
+
+  private async randomDelay(min: number = 1000, max: number = 3000): Promise<void> {
+    const randomTime = Math.floor(Math.random() * (max - min + 1) + min);
+    await delay(randomTime);
   }
 
   async cleanup(): Promise<void> {

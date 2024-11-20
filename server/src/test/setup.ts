@@ -1,3 +1,20 @@
+// Mock Playwright
+jest.mock('playwright', () => ({
+  chromium: {
+    launch: jest.fn(),
+  },
+}));
+
+// Mock Winston logger
+jest.mock('../automation/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 // Extend Jest timeout for Playwright operations
 jest.setTimeout(30000);
 
