@@ -4,15 +4,21 @@ import { logger } from './logger';
 import { AutomationError, ErrorType } from './errors';
 import { BrowserSession, SessionHealth, OperationMetrics, SessionStatus } from './types';
 import { RetryManager } from './RetryManager';
+import { RateLimiter } from './RateLimiter';
 
 export class BrowserManager {
   private static instance: BrowserManager;
-  private sessions: Map<string, BrowserSession> = new Map();
+  private sessions: Map<string, BrowserSession>;
+  private monitoringIntervals: Map<string, NodeJS.Timeout>;
   private retryManager: RetryManager;
+  private rateLimiter: RateLimiter;
   private monitorInterval?: NodeJS.Timeout;
 
   private constructor() {
+    this.sessions = new Map();
+    this.monitoringIntervals = new Map();
     this.retryManager = new RetryManager();
+    this.rateLimiter = RateLimiter.getInstance();
     this.startMonitoring();
   }
 
@@ -228,6 +234,11 @@ export class BrowserManager {
   }
 
   async createSession(profile: BrowserProfile, userId: string): Promise<{ browser: Browser; page: Page }> {
+    if (!await this.rateLimiter.acquireToken(userId)) {
+      const info = this.rateLimiter.getRateLimitInfo(userId);
+      throw new Error(`Rate limit exceeded. Try again after ${info.nextResetTime.toISOString()}`);
+    }
+
     try {
       const browser = await chromium.launch({
         headless: process.env.NODE_ENV === 'production',
@@ -281,6 +292,8 @@ export class BrowserManager {
         ErrorType.SETUP_FAILED,
         true
       );
+    } finally {
+      this.rateLimiter.releaseToken(userId);
     }
   }
 
@@ -341,6 +354,19 @@ export class BrowserManager {
       if (inactiveTime > maxInactiveTime) {
         await this.closeSession(userId);
       }
+    }
+  }
+
+  async performAction<T>(userId: string, action: () => Promise<T>): Promise<T> {
+    if (!await this.rateLimiter.acquireToken(userId)) {
+      const info = this.rateLimiter.getRateLimitInfo(userId);
+      throw new Error(`Rate limit exceeded. Try again after ${info.nextResetTime.toISOString()}`);
+    }
+
+    try {
+      return await action();
+    } finally {
+      this.rateLimiter.releaseToken(userId);
     }
   }
 }
