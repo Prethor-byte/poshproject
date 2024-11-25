@@ -1,4 +1,4 @@
-import type { PoshmarkRegion } from '../../src/types/poshmark';
+import type { PoshmarkRegion } from '../types/poshmark';
 
 interface ProxyConfig {
   hostname: string;

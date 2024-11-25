@@ -9,6 +9,7 @@ jest.mock('playwright', () => ({
 
 describe('BrowserManager', () => {
   let browserManager: BrowserManager;
+  const testUserId = 'test-user-123';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -42,7 +43,7 @@ describe('BrowserManager', () => {
       geolocation: { latitude: 40.7128, longitude: -74.0060 },
     };
 
-    await browserManager.createSession(profile);
+    await browserManager.createSession(profile, testUserId);
 
     expect(chromium.launch).toHaveBeenCalledWith({
       headless: false,
@@ -50,8 +51,8 @@ describe('BrowserManager', () => {
         '--disable-dev-shm-usage',
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-accelerated-2d-canvas',
         '--disable-gpu',
+        '--disable-software-rasterizer',
       ],
     });
   });

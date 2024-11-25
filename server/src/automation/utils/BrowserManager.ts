@@ -53,18 +53,26 @@ export class BrowserManager {
       
       session.health.status = 'healthy';
       session.health.lastCheck = new Date();
-    } catch (error) {
+    } catch (error: unknown) {
       session.health.status = 'degraded';
       session.health.errors.push({
         type: error instanceof AutomationError ? error.type : ErrorType.UNKNOWN,
         timestamp: new Date(),
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       });
 
       if (session.health.errors.length > 3) {
         session.health.status = 'failed';
       }
     }
+  }
+
+  private async handleError(error: unknown, message: string): Promise<never> {
+    logger.error(message, { error: error instanceof Error ? error.message : String(error) });
+    throw new AutomationError(
+      message,
+      error instanceof AutomationError ? error.type : ErrorType.UNKNOWN
+    );
   }
 
   async createSession(profile: BrowserProfile, userId: string): Promise<{ browser: Browser; page: Page }> {
@@ -92,20 +100,18 @@ export class BrowserManager {
       // Set default timeout
       context.setDefaultTimeout(30000);
 
-      // Enable request interception for better control
-      await context.route('**/*', (route) => {
-        const request = route.request();
-        // Block unnecessary resources
-        if (['image', 'font', 'stylesheet'].includes(request.resourceType())) {
-          route.abort();
+      // Block unnecessary resources
+      await context.route('**/*', async (route) => {
+        const resourceType = route.request().resourceType();
+        if (['image', 'font', 'stylesheet'].includes(resourceType)) {
+          await route.abort();
         } else {
-          route.continue();
+          await route.continue();
         }
       });
 
       const page = await context.newPage();
 
-      // Create and store session with health tracking
       const session: BrowserSession = {
         browser,
         context,
@@ -118,8 +124,7 @@ export class BrowserManager {
 
       return { browser, page };
     } catch (error) {
-      logger.error('Failed to create browser session', { error, userId });
-      throw new AutomationError('Browser session creation failed', ErrorType.SETUP_FAILED);
+      return await this.handleError(error, 'Failed to create browser session');
     }
   }
 
@@ -140,7 +145,7 @@ export class BrowserManager {
         await session.browser.close();
         this.sessions.delete(userId);
       } catch (error) {
-        logger.error('Failed to close browser session', { error, userId });
+        await this.handleError(error, 'Failed to close browser session');
       }
     }
   }

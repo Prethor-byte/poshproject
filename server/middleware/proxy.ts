@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { getNextProxy } from '../config/proxy';
-import { PoshmarkRegion } from '../../src/types/poshmark';
+import type { PoshmarkRegion } from '../types/poshmark';
 import HttpsProxyAgent from 'https-proxy-agent';
 import { URL } from 'url';
 

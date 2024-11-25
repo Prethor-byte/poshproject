@@ -46,6 +46,7 @@ describe('BrowserManager', () => {
   let mockContext: jest.Mocked<BrowserContext>;
   let mockPage: jest.Mocked<Page>;
   let mockProfile: BrowserProfile;
+  const testUserId = 'test-user-123';
 
   beforeEach(() => {
     // Reset all mocks
@@ -54,6 +55,8 @@ describe('BrowserManager', () => {
     // Create mock page
     mockPage = {
       close: jest.fn(),
+      route: jest.fn(),
+      goto: jest.fn(),
     } as unknown as jest.Mocked<Page>;
 
     // Create mock context
@@ -70,9 +73,6 @@ describe('BrowserManager', () => {
       close: jest.fn(),
     } as unknown as jest.Mocked<Browser>;
 
-    // Mock chromium.launch to return our mock browser
-    (require('playwright').chromium.launch as jest.Mock).mockResolvedValue(mockBrowser);
-
     // Create mock profile
     mockProfile = {
       id: 'test-profile',
@@ -81,7 +81,11 @@ describe('BrowserManager', () => {
       timezone: 'America/New_York',
       geolocation: { latitude: 40.7128, longitude: -74.0060 },
     } as BrowserProfile;
-    
+
+    // Mock chromium.launch
+    const chromiumLaunch = require('playwright').chromium.launch;
+    chromiumLaunch.mockResolvedValue(mockBrowser);
+
     // Get BrowserManager instance
     manager = BrowserManager.getInstance();
   });
@@ -91,9 +95,43 @@ describe('BrowserManager', () => {
     await manager.closeAllSessions();
   });
 
+  it('should create a new session successfully', async () => {
+    const { browser, page } = await manager.createSession(mockProfile, testUserId);
+    expect(browser).toBeDefined();
+    expect(page).toBeDefined();
+  });
+
+  it('should handle session creation failure', async () => {
+    const error = new Error('Browser launch failed');
+    require('playwright').chromium.launch.mockRejectedValueOnce(error);
+
+    await expect(manager.createSession(mockProfile, testUserId)).rejects.toThrow(AutomationError);
+  });
+
+  it('should check session health', async () => {
+    await manager.createSession(mockProfile, testUserId);
+    const health = await manager.checkHealth(testUserId);
+    expect(health).toBeDefined();
+    expect(health?.status).toBe('healthy');
+  });
+
+  it('should handle non-existent session health check', async () => {
+    const health = await manager.checkHealth('non-existent-user');
+    expect(health).toBeNull();
+  });
+
+  it('should close session successfully', async () => {
+    await manager.createSession(mockProfile, testUserId);
+    await expect(manager.closeSession(testUserId)).resolves.not.toThrow();
+  });
+
+  it('should handle closing non-existent session', async () => {
+    await expect(manager.closeSession('non-existent-user')).resolves.not.toThrow();
+  });
+
   describe('createSession', () => {
     it('should create a new browser session', async () => {
-      const { browser, page } = await manager.createSession(mockProfile);
+      const { browser, page } = await manager.createSession(mockProfile, testUserId);
       expect(browser).toBe(mockBrowser);
       expect(page).toBe(mockPage);
       expect(mockContext.route).toHaveBeenCalled();
@@ -104,7 +142,7 @@ describe('BrowserManager', () => {
       (require('playwright').chromium.launch as jest.Mock).mockRejectedValue(new Error('Launch failed'));
       
       try {
-        await manager.createSession(mockProfile);
+        await manager.createSession(mockProfile, testUserId);
         fail('Expected createSession to throw');
       } catch (error) {
         if (error instanceof MockAutomationError) {
@@ -120,7 +158,7 @@ describe('BrowserManager', () => {
       mockBrowser.newContext.mockRejectedValue(new Error('Context creation failed'));
       
       try {
-        await manager.createSession(mockProfile);
+        await manager.createSession(mockProfile, testUserId);
         fail('Expected createSession to throw');
       } catch (error) {
         if (error instanceof MockAutomationError) {
@@ -139,7 +177,7 @@ describe('BrowserManager', () => {
         continue: jest.fn(),
       };
 
-      await manager.createSession(mockProfile);
+      await manager.createSession(mockProfile, testUserId);
 
       // Get the route callback that was passed to context.route
       const routeCallback = (mockContext.route as jest.Mock).mock.calls[0][1];
@@ -169,8 +207,8 @@ describe('BrowserManager', () => {
 
   describe('closeSession', () => {
     it('should close an existing session', async () => {
-      await manager.createSession(mockProfile);
-      await manager.closeSession(mockProfile.id);
+      await manager.createSession(mockProfile, testUserId);
+      await manager.closeSession(testUserId);
       expect(mockContext.close).toHaveBeenCalled();
       expect(mockBrowser.close).toHaveBeenCalled();
     });
@@ -180,15 +218,15 @@ describe('BrowserManager', () => {
     });
 
     it('should handle closure errors', async () => {
-      await manager.createSession(mockProfile);
+      await manager.createSession(mockProfile, testUserId);
       mockContext.close.mockRejectedValue(new Error('Close failed'));
-      await expect(manager.closeSession(mockProfile.id)).resolves.not.toThrow();
+      await expect(manager.closeSession(testUserId)).resolves.not.toThrow();
     });
   });
 
   describe('closeAllSessions', () => {
     it('should close all active sessions', async () => {
-      await manager.createSession(mockProfile);
+      await manager.createSession(mockProfile, testUserId);
       const secondProfile = {
         id: 'test-profile-2',
         userAgent: 'test-agent-2',
@@ -196,14 +234,14 @@ describe('BrowserManager', () => {
         timezone: 'America/New_York',
         geolocation: { latitude: 40.7128, longitude: -74.0060 },
       } as BrowserProfile;
-      await manager.createSession(secondProfile);
+      await manager.createSession(secondProfile, 'test-user-2');
       await manager.closeAllSessions();
       expect(mockContext.close).toHaveBeenCalledTimes(2);
       expect(mockBrowser.close).toHaveBeenCalledTimes(2);
     });
 
     it('should handle closure errors in multiple sessions', async () => {
-      await manager.createSession(mockProfile);
+      await manager.createSession(mockProfile, testUserId);
       const secondProfile = {
         id: 'test-profile-2',
         userAgent: 'test-agent-2',
@@ -211,7 +249,7 @@ describe('BrowserManager', () => {
         timezone: 'America/New_York',
         geolocation: { latitude: 40.7128, longitude: -74.0060 },
       } as BrowserProfile;
-      await manager.createSession(secondProfile);
+      await manager.createSession(secondProfile, 'test-user-2');
       mockContext.close.mockRejectedValue(new Error('Close failed'));
       await expect(manager.closeAllSessions()).resolves.not.toThrow();
     });
