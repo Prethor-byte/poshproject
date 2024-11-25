@@ -7,6 +7,7 @@ import { BrowserManager } from '../utils/BrowserManager';
 
 interface ShareConfig {
   username: string;
+  userId: string;  // Added userId for session tracking
   maxItems?: number;
   delayBetweenShares?: [number, number]; // min, max in ms
   retryAttempts?: number;
@@ -29,14 +30,29 @@ export class ShareAutomation {
     this.browserManager = BrowserManager.getInstance();
   }
 
+  private async checkSessionHealth(): Promise<boolean> {
+    const health = await this.browserManager.checkHealth(this.config.userId);
+    if (!health || health.status === 'failed') {
+      return false;
+    }
+    return true;
+  }
+
   async initialize(): Promise<void> {
     let sessionCreated = false;
     try {
+      // Check for existing session
+      const existingSession = await this.browserManager.getSession(this.config.userId);
+      if (existingSession) {
+        await this.browserManager.closeSession(this.config.userId);
+      }
+
       const profile = await createBrowserProfile();
-      const { browser, page } = await this.browserManager.createSession(profile);
+      const { browser, page } = await this.browserManager.createSession(profile, this.config.userId);
       sessionCreated = true;
       this.browser = browser;
       this.page = page;
+
       try {
         await this.login();
       } catch (loginError) {
@@ -44,7 +60,7 @@ export class ShareAutomation {
         throw loginError;
       }
     } catch (error) {
-      logger.error('Failed to initialize share automation', { error });
+      logger.error('Failed to initialize share automation', { error, userId: this.config.userId });
       // Only cleanup if session was created
       if (sessionCreated) {
         await this.cleanup();
@@ -81,9 +97,9 @@ export class ShareAutomation {
       }
 
       this.isLoggedIn = true;
-      logger.info('Successfully logged in to Poshmark');
+      logger.info('Successfully logged in to Poshmark', { userId: this.config.userId });
     } catch (error) {
-      logger.error('Login failed', { error });
+      logger.error('Login failed', { error, userId: this.config.userId });
       if (error instanceof AutomationError) {
         throw error;
       }
@@ -94,6 +110,13 @@ export class ShareAutomation {
   async shareCloset(): Promise<number> {
     if (!this.isLoggedIn || !this.page) {
       throw new AutomationError('Not logged in', ErrorType.AUTH_FAILED);
+    }
+
+    // Check session health before proceeding
+    if (!await this.checkSessionHealth()) {
+      logger.warn('Unhealthy session detected, attempting recovery', { userId: this.config.userId });
+      await this.cleanup();
+      await this.initialize();
     }
 
     let sharedCount = 0;
@@ -119,14 +142,17 @@ export class ShareAutomation {
             );
           }
         } catch (error) {
-          logger.warn(`Failed to share item ${sharedCount + 1}`, { error });
+          logger.warn(`Failed to share item ${sharedCount + 1}`, { 
+            error,
+            userId: this.config.userId 
+          });
           continue;
         }
       }
 
       return sharedCount;
     } catch (error) {
-      logger.error('Share automation failed', { error });
+      logger.error('Share automation failed', { error, userId: this.config.userId });
       throw new AutomationError(
         'Share automation failed',
         error instanceof AutomationError ? error.type : ErrorType.UNKNOWN
@@ -134,25 +160,20 @@ export class ShareAutomation {
     }
   }
 
-  private async randomDelay(min: number = 1000, max: number = 3000): Promise<void> {
-    const randomTime = Math.floor(Math.random() * (max - min + 1) + min);
-    await delay(randomTime);
-  }
-
   async cleanup(): Promise<void> {
     try {
-      if (this.page) {
-        await this.page.close();
-        this.page = null;
-      }
-      if (this.browser) {
-        await this.browser.close();
-        this.browser = null;
-      }
+      await this.browserManager.closeSession(this.config.userId);
+      this.browser = null;
+      this.page = null;
     } catch (error) {
-      logger.error('Cleanup failed', { error });
+      logger.error('Cleanup failed', { error, userId: this.config.userId });
     } finally {
       this.isLoggedIn = false;
     }
+  }
+
+  private async randomDelay(min: number = 1000, max: number = 3000): Promise<void> {
+    const randomTime = Math.floor(Math.random() * (max - min + 1) + min);
+    await delay(randomTime);
   }
 }
