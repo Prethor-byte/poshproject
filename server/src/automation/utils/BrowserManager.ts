@@ -2,32 +2,19 @@ import { Browser, BrowserContext, Page, chromium } from 'playwright';
 import { BrowserProfile } from './browserProfile';
 import { logger } from './logger';
 import { AutomationError, ErrorType } from './errors';
-
-interface SessionHealth {
-  status: 'healthy' | 'degraded' | 'failed';
-  lastCheck: Date;
-  errors: Array<{
-    type: ErrorType;
-    timestamp: Date;
-    message: string;
-  }>;
-  lastUsed: Date;
-  recoveryAttempts: number;
-}
-
-interface BrowserSession {
-  browser: Browser;
-  context: BrowserContext;
-  profile: BrowserProfile;
-  userId: string;
-  health: SessionHealth;
-}
+import { BrowserSession, SessionHealth, OperationMetrics, SessionStatus } from './types';
+import { RetryManager } from './RetryManager';
 
 export class BrowserManager {
   private static instance: BrowserManager;
   private sessions: Map<string, BrowserSession> = new Map();
+  private retryManager: RetryManager;
+  private monitorInterval?: NodeJS.Timeout;
 
-  private constructor() {}
+  private constructor() {
+    this.retryManager = new RetryManager();
+    this.startMonitoring();
+  }
 
   static getInstance(): BrowserManager {
     if (!BrowserManager.instance) {
@@ -40,39 +27,204 @@ export class BrowserManager {
     return {
       status: 'healthy',
       lastCheck: new Date(),
-      errors: [],
       lastUsed: new Date(),
-      recoveryAttempts: 0
+      errors: [],
+      recoveryAttempts: 0,
+      metrics: {
+        totalOperations: 0,
+        failedOperations: 0,
+        averageResponseTime: 0,
+        lastResponseTime: 0
+      }
     };
   }
 
-  private async checkSessionHealth(session: BrowserSession): Promise<void> {
-    try {
-      const page = await session.context.newPage();
-      await page.close();
-      
-      session.health.status = 'healthy';
-      session.health.lastCheck = new Date();
-    } catch (error: unknown) {
-      session.health.status = 'degraded';
-      session.health.errors.push({
-        type: error instanceof AutomationError ? error.type : ErrorType.UNKNOWN,
-        timestamp: new Date(),
-        message: error instanceof Error ? error.message : String(error)
-      });
-
-      if (session.health.errors.length > 3) {
-        session.health.status = 'failed';
+  private async monitorSessions(): Promise<void> {
+    for (const [userId, session] of this.sessions.entries()) {
+      try {
+        await this.checkSessionHealth(session);
+        
+        if (session.health.status === 'failed') {
+          const recovered = await this.recoverSession(userId);
+          if (!recovered) {
+            await this.closeSession(userId);
+          }
+        }
+      } catch (error) {
+        logger.error('Session monitoring failed', {
+          error,
+          userId,
+          sessionId: session.profile.id
+        });
       }
     }
   }
 
-  private async handleError(error: unknown, message: string): Promise<never> {
-    logger.error(message, { error: error instanceof Error ? error.message : String(error) });
-    throw new AutomationError(
-      message,
-      error instanceof AutomationError ? error.type : ErrorType.UNKNOWN
+  private startMonitoring(): void {
+    // Clear any existing interval
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+    }
+    // Start health check interval
+    this.monitorInterval = setInterval(() => this.monitorSessions(), 60000);
+  }
+
+  public stopMonitoring(): void {
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+      this.monitorInterval = undefined;
+    }
+  }
+
+  private async recoverSession(userId: string): Promise<boolean> {
+    const session = this.sessions.get(userId);
+    if (!session) return false;
+
+    session.health.recoveryAttempts++;
+
+    if (session.health.recoveryAttempts >= 3) {
+      logger.error('Max recovery attempts reached, session will be terminated', {
+        userId,
+        sessionId: session.profile.id
+      });
+      await this.closeSession(userId);
+      return false;
+    }
+
+    try {
+      // Close existing session resources
+      await Promise.all([
+        session.context.close().catch(() => {}),
+        session.browser.close().catch(() => {})
+      ]);
+
+      // Create new session
+      const { browser, context } = await this.retryManager.executeWithBackoff(
+        async () => {
+          const browser = await chromium.launch({
+            headless: process.env.NODE_ENV === 'production',
+            args: [
+              '--disable-dev-shm-usage',
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-gpu'
+            ]
+          });
+
+          const context = await browser.newContext({
+            userAgent: session.profile.userAgent,
+            viewport: session.profile.viewport,
+            locale: 'en-US',
+            timezoneId: session.profile.timezone,
+            geolocation: session.profile.geolocation,
+            permissions: ['geolocation']
+          });
+
+          return { browser, context };
+        }
+      );
+
+      // Update session with new browser and context
+      session.browser = browser;
+      session.context = context;
+      session.health.status = 'healthy';
+      session.health.lastCheck = new Date();
+      session.health.errors = [];
+
+      logger.info('Session recovered successfully', {
+        userId,
+        sessionId: session.profile.id,
+        attempts: session.health.recoveryAttempts
+      });
+
+      return true;
+    } catch (error) {
+      logger.error('Session recovery failed', {
+        error,
+        userId,
+        sessionId: session.profile.id
+      });
+      await this.closeSession(userId);
+      return false;
+    }
+  }
+
+  private async checkSessionHealth(session: BrowserSession): Promise<void> {
+    try {
+      const startTime = Date.now();
+      const page = await session.context.newPage();
+      await page.close();
+      
+      const duration = Date.now() - startTime;
+      await this.updateSessionMetrics(session.userId, {
+        operationDuration: duration,
+        success: true
+      });
+      
+      session.health.lastCheck = new Date();
+    } catch (error) {
+      const errorType = error instanceof AutomationError ? error.type : ErrorType.UNKNOWN;
+      const recoverable = error instanceof AutomationError ? error.recoverable : true;
+      
+      session.health.errors.push({
+        type: errorType,
+        message: error instanceof Error ? error.message : String(error),
+        timestamp: new Date(),
+        recoverable
+      });
+
+      await this.updateSessionMetrics(session.userId, {
+        operationDuration: 0,
+        success: false,
+        errorType
+      });
+
+      this.updateHealthStatus(session);
+    }
+  }
+
+  async updateSessionMetrics(userId: string, metrics: OperationMetrics): Promise<void> {
+    const session = await this.getSession(userId);
+    if (!session) return;
+
+    const { metrics: sessionMetrics } = session.health;
+    sessionMetrics.totalOperations++;
+    
+    if (!metrics.success) {
+      sessionMetrics.failedOperations++;
+    }
+
+    // Update response time metrics
+    const { operationDuration } = metrics;
+    sessionMetrics.lastResponseTime = operationDuration;
+    
+    if (sessionMetrics.totalOperations === 1) {
+      sessionMetrics.averageResponseTime = operationDuration;
+    } else {
+      sessionMetrics.averageResponseTime = (
+        (sessionMetrics.averageResponseTime * (sessionMetrics.totalOperations - 1) + operationDuration) /
+        sessionMetrics.totalOperations
+      );
+    }
+
+    this.updateHealthStatus(session);
+  }
+
+  private updateHealthStatus(session: BrowserSession): void {
+    const { metrics, errors } = session.health;
+    const failureRate = metrics.totalOperations > 0 ? 
+      metrics.failedOperations / metrics.totalOperations : 0;
+    const hasRecentErrors = errors.some(
+      error => Date.now() - error.timestamp.getTime() < 5 * 60 * 1000 // 5 minutes
     );
+
+    if (failureRate >= 0.5 || errors.length >= 5) {
+      session.health.status = 'failed';
+    } else if (failureRate >= 0.2 || hasRecentErrors) {
+      session.health.status = 'degraded';
+    } else {
+      session.health.status = 'healthy';
+    }
   }
 
   async createSession(profile: BrowserProfile, userId: string): Promise<{ browser: Browser; page: Page }> {
@@ -83,7 +235,6 @@ export class BrowserManager {
           '--disable-dev-shm-usage',
           '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-accelerated-2d-canvas',
           '--disable-gpu'
         ]
       });
@@ -97,7 +248,6 @@ export class BrowserManager {
         permissions: ['geolocation']
       });
 
-      // Set default timeout
       context.setDefaultTimeout(30000);
 
       // Block unnecessary resources
@@ -117,14 +267,20 @@ export class BrowserManager {
         context,
         profile,
         userId,
-        health: this.createHealthCheck()
+        health: this.createHealthCheck(),
+        createdAt: new Date()
       };
 
       this.sessions.set(userId, session);
 
       return { browser, page };
     } catch (error) {
-      return await this.handleError(error, 'Failed to create browser session');
+      logger.error('Failed to create browser session', { error });
+      throw new AutomationError(
+        'Browser session creation failed',
+        ErrorType.SETUP_FAILED,
+        true
+      );
     }
   }
 
@@ -137,32 +293,45 @@ export class BrowserManager {
     return session;
   }
 
-  async closeSession(userId: string): Promise<void> {
-    const session = this.sessions.get(userId);
-    if (session) {
-      try {
-        await session.context.close();
-        await session.browser.close();
-        this.sessions.delete(userId);
-      } catch (error) {
-        await this.handleError(error, 'Failed to close browser session');
-      }
-    }
-  }
-
-  async closeAllSessions(): Promise<void> {
-    const closePromises = Array.from(this.sessions.values()).map(session => 
-      this.closeSession(session.userId)
-    );
-    await Promise.all(closePromises);
-  }
-
   async checkHealth(userId: string): Promise<SessionHealth | null> {
     const session = await this.getSession(userId);
     if (!session) return null;
 
     await this.checkSessionHealth(session);
+    
+    if (session.health.status === 'failed') {
+      const recovered = await this.recoverSession(userId);
+      if (!recovered) {
+        await this.closeSession(userId);
+        return null;
+      }
+    }
+
     return session.health;
+  }
+
+  async closeSession(userId: string): Promise<void> {
+    const session = this.sessions.get(userId);
+    if (session) {
+      try {
+        await Promise.all([
+          session.context.close().catch(() => {}),
+          session.browser.close().catch(() => {})
+        ]);
+      } catch (error) {
+        logger.error('Failed to close browser session', { error });
+      } finally {
+        this.sessions.delete(userId);
+      }
+    }
+  }
+
+  async closeAllSessions(): Promise<void> {
+    this.stopMonitoring();
+    const closePromises = Array.from(this.sessions.keys()).map(userId => 
+      this.closeSession(userId)
+    );
+    await Promise.allSettled(closePromises);
   }
 
   async cleanupInactiveSessions(maxInactiveTime: number = 30 * 60 * 1000): Promise<void> {
