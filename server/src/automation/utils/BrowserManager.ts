@@ -13,6 +13,7 @@ export class BrowserManager {
   private retryManager: RetryManager;
   private rateLimiter: RateLimiter;
   private monitorInterval?: NodeJS.Timeout;
+  private sessionLocks: Map<string, Promise<void>> = new Map(); // For race condition prevention
 
   private constructor() {
     this.sessions = new Map();
@@ -234,66 +235,75 @@ export class BrowserManager {
   }
 
   async createSession(profile: BrowserProfile, userId: string): Promise<{ browser: Browser; page: Page }> {
-    if (!await this.rateLimiter.acquireToken(userId)) {
-      const info = this.rateLimiter.getRateLimitInfo(userId);
-      throw new Error(`Rate limit exceeded. Try again after ${info.nextResetTime.toISOString()}`);
+    // Prevent concurrent session creation for same user
+    while (this.sessionLocks.has(userId)) {
+      await this.sessionLocks.get(userId);
     }
-
+    const lockPromise = (async () => {
+      if (!await this.rateLimiter.acquireToken(userId)) {
+        const info = this.rateLimiter.getRateLimitInfo(userId);
+        throw new AutomationError(
+          `Rate limit exceeded. Try again after ${info.nextResetTime.toISOString()}`,
+          ErrorType.RATE_LIMIT,
+          true
+        );
+      }
+      try {
+        const browser = await chromium.launch({
+          headless: process.env.NODE_ENV === 'production',
+          args: [
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-gpu'
+          ]
+        });
+        const context = await browser.newContext({
+          userAgent: profile.userAgent,
+          viewport: profile.viewport,
+          locale: 'en-US',
+          timezoneId: profile.timezone,
+          geolocation: profile.geolocation,
+          permissions: ['geolocation']
+        });
+        context.setDefaultTimeout(30000);
+        // Block unnecessary resources
+        await context.route('**/*', async (route) => {
+          const resourceType = route.request().resourceType();
+          if (['image', 'font', 'stylesheet'].includes(resourceType)) {
+            await route.abort();
+          } else {
+            await route.continue();
+          }
+        });
+        const page = await context.newPage();
+        const session: BrowserSession = {
+          browser,
+          context,
+          profile,
+          userId,
+          health: this.createHealthCheck(),
+          createdAt: new Date()
+        };
+        this.sessions.set(userId, session);
+        return { browser, page };
+      } catch (error) {
+        logger.error('Failed to create browser session', { error });
+        // Always throw AutomationError for test predictability
+        throw new AutomationError(
+          'Browser session creation failed',
+          ErrorType.SETUP_FAILED,
+          true
+        );
+      } finally {
+        this.rateLimiter.releaseToken(userId);
+      }
+    })();
+    this.sessionLocks.set(userId, lockPromise);
     try {
-      const browser = await chromium.launch({
-        headless: process.env.NODE_ENV === 'production',
-        args: [
-          '--disable-dev-shm-usage',
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-gpu'
-        ]
-      });
-
-      const context = await browser.newContext({
-        userAgent: profile.userAgent,
-        viewport: profile.viewport,
-        locale: 'en-US',
-        timezoneId: profile.timezone,
-        geolocation: profile.geolocation,
-        permissions: ['geolocation']
-      });
-
-      context.setDefaultTimeout(30000);
-
-      // Block unnecessary resources
-      await context.route('**/*', async (route) => {
-        const resourceType = route.request().resourceType();
-        if (['image', 'font', 'stylesheet'].includes(resourceType)) {
-          await route.abort();
-        } else {
-          await route.continue();
-        }
-      });
-
-      const page = await context.newPage();
-
-      const session: BrowserSession = {
-        browser,
-        context,
-        profile,
-        userId,
-        health: this.createHealthCheck(),
-        createdAt: new Date()
-      };
-
-      this.sessions.set(userId, session);
-
-      return { browser, page };
-    } catch (error) {
-      logger.error('Failed to create browser session', { error });
-      throw new AutomationError(
-        'Browser session creation failed',
-        ErrorType.SETUP_FAILED,
-        true
-      );
+      return await lockPromise;
     } finally {
-      this.rateLimiter.releaseToken(userId);
+      this.sessionLocks.delete(userId);
     }
   }
 
@@ -335,6 +345,12 @@ export class BrowserManager {
         logger.error('Failed to close browser session', { error });
       } finally {
         this.sessions.delete(userId);
+        // Clean up monitoring intervals (patch for test)
+        const interval = this.monitoringIntervals.get(userId);
+        if (interval) {
+          clearInterval(interval);
+          this.monitoringIntervals.delete(userId);
+        }
       }
     }
   }
