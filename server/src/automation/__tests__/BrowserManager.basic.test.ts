@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import { BrowserManager } from '../utils/BrowserManager';
+BrowserManager.disableMonitoringForTests = true;
 
 jest.mock('playwright', () => ({
   chromium: {
@@ -8,6 +9,10 @@ jest.mock('playwright', () => ({
 }));
 
 describe('BrowserManager', () => {
+  afterAll(() => {
+    const manager = require('../utils/BrowserManager').BrowserManager.getInstance();
+    manager.stopMonitoring();
+  });
   let browserManager: BrowserManager;
   const testUserId = 'test-user-123';
 

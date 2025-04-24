@@ -2,6 +2,10 @@ import { RetryManager } from '../RetryManager';
 import { AutomationError, ErrorType } from '../errors';
 
 describe('RetryManager', () => {
+  afterAll(() => {
+    const manager = require('../../BrowserManager').BrowserManager.getInstance();
+    manager.stopMonitoring();
+  });
   it('retries on retryable error and succeeds', async () => {
     let attempts = 0;
     const manager = new RetryManager({

@@ -1,4 +1,5 @@
 import { BrowserManager } from '../utils/BrowserManager';
+BrowserManager.disableMonitoringForTests = true;
 import { BrowserProfile } from '../utils/browserProfile';
 import { Browser, BrowserContext, Page } from 'playwright';
 import { AutomationError, ErrorType } from '../utils/errors';
@@ -42,7 +43,17 @@ jest.mock('../utils/errors', () => ({
   }
 }));
 
+afterEach(() => {
+  // Reset the singleton for test isolation
+  // @ts-ignore
+  BrowserManager['instance'] = undefined;
+});
+
 describe('BrowserManager', () => {
+  afterAll(() => {
+    const manager = require('../utils/BrowserManager').BrowserManager.getInstance();
+    manager.stopMonitoring();
+  });
   let manager: BrowserManager;
   let mockBrowser: jest.Mocked<Browser>;
   let mockContext: jest.Mocked<BrowserContext>;
@@ -355,6 +366,9 @@ describe('BrowserManager', () => {
         await manager.checkHealth(testUserId);
       }
       
+      // Debug: log session map (for troubleshooting, can be removed)
+      // eslint-disable-next-line no-console
+      // console.log('Session map after recoveries:', manager["sessions"]);
       const session = await manager.getSession(testUserId);
       expect(session).toBeNull();
     });

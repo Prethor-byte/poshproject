@@ -7,6 +7,7 @@ import { RetryManager } from './RetryManager';
 import { RateLimiter } from './RateLimiter';
 
 export class BrowserManager {
+  static disableMonitoringForTests = false;
   private static instance: BrowserManager;
   private sessions: Map<string, BrowserSession>;
   private monitoringIntervals: Map<string, NodeJS.Timeout>;
@@ -20,7 +21,10 @@ export class BrowserManager {
     this.monitoringIntervals = new Map();
     this.retryManager = new RetryManager();
     this.rateLimiter = RateLimiter.getInstance();
-    this.startMonitoring();
+    // Never start the monitor interval in test environments or if explicitly disabled for tests
+    if (!BrowserManager.disableMonitoringForTests && process.env.NODE_ENV !== 'test') {
+      this.startMonitoring();
+    }
   }
 
   static getInstance(): BrowserManager {

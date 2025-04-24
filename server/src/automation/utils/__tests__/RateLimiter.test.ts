@@ -10,6 +10,10 @@ const defaultConfig: RateLimitConfig = {
 };
 
 describe('RateLimiter', () => {
+  afterAll(() => {
+    const manager = require('../../BrowserManager').BrowserManager.getInstance();
+    manager.stopMonitoring();
+  });
   let limiter: RateLimiter;
   const userId = 'user-1';
   const user2 = 'user-2';

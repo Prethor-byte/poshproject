@@ -7,6 +7,10 @@ jest.mock('../utils/BrowserManager');
 jest.mock('../utils/logger');
 
 describe('ShareAutomation', () => {
+  afterAll(() => {
+    const manager = require('../utils/BrowserManager').BrowserManager.getInstance();
+    manager.stopMonitoring();
+  });
   let shareAutomation: ShareAutomation;
   let mockBrowser: jest.Mocked<Browser>;
   let mockPage: jest.Mocked<Page>;
