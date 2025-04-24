@@ -19,29 +19,6 @@ jest.mock('../utils/logger', () => ({
   }
 }));
 
-class MockAutomationError extends Error {
-  constructor(
-    message: string,
-    public type: ErrorType,
-    public recoverable: boolean = true
-  ) {
-    super(message);
-    this.name = 'AutomationError';
-  }
-}
-
-jest.mock('../utils/errors', () => ({
-  AutomationError: jest.fn().mockImplementation((message: string, type: ErrorType) => {
-    return new MockAutomationError(message, type);
-  }),
-  ErrorType: {
-    SETUP_FAILED: 'SETUP_FAILED',
-    AUTH_FAILED: 'AUTH_FAILED',
-    CAPTCHA: 'CAPTCHA',
-    NETWORK: 'NETWORK',
-    UNKNOWN: 'UNKNOWN'
-  }
-}));
 
 afterEach(() => {
   // Reset the singleton for test isolation
@@ -50,6 +27,265 @@ afterEach(() => {
 });
 
 describe('BrowserManager', () => {
+  // --- Basic Functionality ---
+  describe('Basic Functionality', () => {
+    it('should be a singleton', () => {
+      const instance1 = BrowserManager.getInstance();
+      const instance2 = BrowserManager.getInstance();
+      expect(instance1).toBe(instance2);
+    });
+    it('should launch browser with correct options', async () => {
+      const mockBrowser = {
+        newContext: jest.fn().mockResolvedValue({
+          newPage: jest.fn().mockResolvedValue({}),
+          close: jest.fn(),
+          setDefaultTimeout: jest.fn(),
+          route: jest.fn(),
+        }),
+        close: jest.fn(),
+      };
+      const chromiumLaunch = require('playwright').chromium.launch;
+      chromiumLaunch.mockResolvedValue(mockBrowser);
+      const profile = {
+        id: 'test-profile',
+        userAgent: 'test-agent',
+        viewport: { width: 1920, height: 1080 },
+        timezone: 'America/New_York',
+        geolocation: { latitude: 40.7128, longitude: -74.0060 },
+      };
+      const manager = BrowserManager.getInstance();
+      await manager.createSession(profile, 'test-user-123');
+      expect(chromiumLaunch).toHaveBeenCalledWith({
+        headless: false,
+        args: [
+          '--disable-dev-shm-usage',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+        ],
+      });
+    });
+  });
+
+  // --- Session Management ---
+  describe('Session Management', () => {
+    it('should create a new session successfully', async () => {
+      const { browser, page } = await manager.createSession(mockProfile, testUserId);
+      expect(browser).toBeDefined();
+      expect(page).toBeDefined();
+    });
+    it('should close session successfully', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      await expect(manager.closeSession(testUserId)).resolves.not.toThrow();
+    });
+    it('should handle closing non-existent session', async () => {
+      await expect(manager.closeSession('non-existent-user')).resolves.not.toThrow();
+    });
+    it('should get session health', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      const health = await manager.checkHealth(testUserId);
+      expect(health).toBeDefined();
+      expect(health?.status).toBe('healthy');
+    });
+    it('should handle non-existent session health check', async () => {
+      const health = await manager.checkHealth('non-existent-user');
+      expect(health).toBeNull();
+    });
+    // Add more session management tests here as needed
+  });
+
+  // --- Error Handling ---
+  describe('Error Handling', () => {
+    it('should handle session creation failure', async () => {
+      const error = new Error('Browser launch failed');
+      require('playwright').chromium.launch.mockRejectedValueOnce(error);
+      await expect(manager.createSession(mockProfile, testUserId)).rejects.toThrow(AutomationError);
+    });
+    // Add more error handling tests here as needed
+  });
+
+  // --- Session Health Monitoring ---
+  describe('Session Health Monitoring', () => {
+    it('should update session metrics correctly', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      const metrics: OperationMetrics = {
+        operationDuration: 100,
+        success: true
+      };
+      await manager.updateSessionMetrics(testUserId, metrics);
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after metrics update:', session);
+      expect(session?.health.metrics.totalOperations).toBe(1);
+      expect(session?.health.metrics.failedOperations).toBe(0);
+      expect(session?.health.metrics.lastResponseTime).toBe(100);
+      expect(session?.health.metrics.averageResponseTime).toBe(100);
+    });
+
+    it('should track failed operations', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      const metrics: OperationMetrics = {
+        operationDuration: 100,
+        success: false,
+        errorType: ErrorType.NETWORK
+      };
+      await manager.updateSessionMetrics(testUserId, metrics);
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after failed operation:', session);
+      expect(session?.health.metrics.totalOperations).toBe(1);
+      expect(session?.health.metrics.failedOperations).toBe(1);
+    });
+
+    it('should update health status based on metrics', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      const metrics: OperationMetrics = {
+        operationDuration: 100,
+        success: false,
+        errorType: ErrorType.NETWORK
+      };
+      for (let i = 0; i < 3; i++) {
+        await manager.updateSessionMetrics(testUserId, metrics);
+      }
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after health status degrade:', session);
+      expect(session?.health.status).toBe('degraded');
+    });
+
+    it('should mark session as failed with high failure rate', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      const metrics: OperationMetrics = {
+        operationDuration: 100,
+        success: false,
+        errorType: ErrorType.NETWORK
+      };
+      for (let i = 0; i < 6; i++) {
+        await manager.updateSessionMetrics(testUserId, metrics);
+      }
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after high failure rate:', session);
+      expect(session?.health.status).toBe('failed');
+    });
+
+    it('should attempt session recovery when health check fails', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
+      await manager.checkHealth(testUserId);
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after recovery attempt:', session);
+      expect(session?.health.recoveryAttempts).toBeGreaterThan(0);
+    });
+
+    it('should close session after max recovery attempts', async () => {
+      await manager.createSession(mockProfile, testUserId);
+      mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
+      for (let i = 0; i < 4; i++) {
+        await manager.checkHealth(testUserId);
+      }
+      const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      console.log('Session after max recovery attempts:', session);
+      expect(session).toBeNull();
+    });
+  });
+  describe('Basic Functionality', () => {
+    it('should be a singleton', () => {
+      const instance1 = BrowserManager.getInstance();
+      const instance2 = BrowserManager.getInstance();
+      expect(instance1).toBe(instance2);
+    });
+
+    it('should launch browser with correct options', async () => {
+      const mockBrowser = {
+        newContext: jest.fn().mockResolvedValue({
+          newPage: jest.fn().mockResolvedValue({}),
+          close: jest.fn(),
+          setDefaultTimeout: jest.fn(),
+          route: jest.fn(),
+        }),
+        close: jest.fn(),
+      };
+      // Patch the global mock for this test
+      const chromiumLaunch = require('playwright').chromium.launch;
+      chromiumLaunch.mockResolvedValue(mockBrowser);
+
+      const profile = {
+        id: 'test-profile',
+        userAgent: 'test-agent',
+        viewport: { width: 1920, height: 1080 },
+        timezone: 'America/New_York',
+        geolocation: { latitude: 40.7128, longitude: -74.0060 },
+      };
+
+      const manager = BrowserManager.getInstance();
+      await manager.createSession(profile, 'test-user-123');
+
+      expect(chromiumLaunch).toHaveBeenCalledWith({
+        headless: false,
+        args: [
+          '--disable-dev-shm-usage',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+        ],
+      });
+    });
+  });
+  describe('Basic Functionality', () => {
+    it('should be a singleton', () => {
+      const instance1 = BrowserManager.getInstance();
+      const instance2 = BrowserManager.getInstance();
+      expect(instance1).toBe(instance2);
+    });
+
+    it('should launch browser with correct options', async () => {
+      const mockBrowser = {
+        newContext: jest.fn().mockResolvedValue({
+          newPage: jest.fn().mockResolvedValue({}),
+          close: jest.fn(),
+          setDefaultTimeout: jest.fn(),
+          route: jest.fn(),
+        }),
+        close: jest.fn(),
+      };
+      // Patch the global mock for this test
+      const chromiumLaunch = require('playwright').chromium.launch;
+      chromiumLaunch.mockResolvedValue(mockBrowser);
+
+      const profile = {
+        id: 'test-profile',
+        userAgent: 'test-agent',
+        viewport: { width: 1920, height: 1080 },
+        timezone: 'America/New_York',
+        geolocation: { latitude: 40.7128, longitude: -74.0060 },
+      };
+
+      const manager = BrowserManager.getInstance();
+      await manager.createSession(profile, 'test-user-123');
+
+      expect(chromiumLaunch).toHaveBeenCalledWith({
+        headless: false,
+        args: [
+          '--disable-dev-shm-usage',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+        ],
+      });
+    });
+  });
   afterAll(() => {
     const manager = require('../utils/BrowserManager').BrowserManager.getInstance();
     manager.stopMonitoring();
@@ -112,6 +348,7 @@ describe('BrowserManager', () => {
     await manager.closeAllSessions();
     manager.stopMonitoring();
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   afterAll(() => {
@@ -167,12 +404,12 @@ describe('BrowserManager', () => {
       try {
         await manager.createSession(mockProfile, testUserId);
         fail('Expected createSession to throw');
-      } catch (error) {
-        if (error instanceof MockAutomationError) {
+      } catch (error: any) {
+        if (error instanceof AutomationError) {
           expect(error.type).toBe('SETUP_FAILED');
           expect(error.message).toBe('Browser session creation failed');
         } else {
-          fail('Expected error to be instance of MockAutomationError');
+          fail('Expected error to be instance of AutomationError');
         }
       }
     });
@@ -183,12 +420,12 @@ describe('BrowserManager', () => {
       try {
         await manager.createSession(mockProfile, testUserId);
         fail('Expected createSession to throw');
-      } catch (error) {
-        if (error instanceof MockAutomationError) {
+      } catch (error: any) {
+        if (error instanceof AutomationError) {
           expect(error.type).toBe('SETUP_FAILED');
           expect(error.message).toBe('Browser session creation failed');
         } else {
-          fail('Expected error to be instance of MockAutomationError');
+          fail('Expected error to be instance of AutomationError');
         }
       }
     });
@@ -281,13 +518,12 @@ describe('BrowserManager', () => {
   describe('Session Health Monitoring', () => {
     it('should update session metrics correctly', async () => {
       await manager.createSession(mockProfile, testUserId);
-      
+      // No mocking needed for this test
       const metrics: OperationMetrics = {
         operationDuration: 100,
         success: true
       };
       await manager.updateSessionMetrics(testUserId, metrics);
-
       const session = await manager.getSession(testUserId);
       expect(session?.health.metrics.totalOperations).toBe(1);
       expect(session?.health.metrics.failedOperations).toBe(0);
@@ -297,14 +533,13 @@ describe('BrowserManager', () => {
 
     it('should track failed operations', async () => {
       await manager.createSession(mockProfile, testUserId);
-      
+      // No mocking needed for this test
       const metrics: OperationMetrics = {
         operationDuration: 100,
         success: false,
         errorType: ErrorType.NETWORK
       };
       await manager.updateSessionMetrics(testUserId, metrics);
-
       const session = await manager.getSession(testUserId);
       expect(session?.health.metrics.totalOperations).toBe(1);
       expect(session?.health.metrics.failedOperations).toBe(1);
@@ -312,63 +547,58 @@ describe('BrowserManager', () => {
 
     it('should update health status based on metrics', async () => {
       await manager.createSession(mockProfile, testUserId);
-      
-      // Simulate multiple failed operations
+      // No mocking needed for this test
       const metrics: OperationMetrics = {
         operationDuration: 100,
         success: false,
         errorType: ErrorType.NETWORK
       };
-
       for (let i = 0; i < 3; i++) {
         await manager.updateSessionMetrics(testUserId, metrics);
       }
-
       const session = await manager.getSession(testUserId);
       expect(session?.health.status).toBe('degraded');
     });
 
     it('should mark session as failed with high failure rate', async () => {
       await manager.createSession(mockProfile, testUserId);
-      
-      // Simulate many failed operations
+      // No mocking needed for this test
       const metrics: OperationMetrics = {
         operationDuration: 100,
         success: false,
         errorType: ErrorType.NETWORK
       };
-
       for (let i = 0; i < 6; i++) {
         await manager.updateSessionMetrics(testUserId, metrics);
       }
-
       const session = await manager.getSession(testUserId);
       expect(session?.health.status).toBe('failed');
     });
 
     it('should attempt session recovery when health check fails', async () => {
       await manager.createSession(mockProfile, testUserId);
+      // Explicitly set mock for this test
       mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
-      
       // Trigger health check
       await manager.checkHealth(testUserId);
-      
       const session = await manager.getSession(testUserId);
+      // Debug log
+      // eslint-disable-next-line no-console
+      // console.log('Session after failed health check:', session);
       expect(session?.health.recoveryAttempts).toBeGreaterThan(0);
     });
 
     it('should close session after max recovery attempts', async () => {
       await manager.createSession(mockProfile, testUserId);
+      // Explicitly set mock for this test
       mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
-      
       // Simulate multiple failed recoveries
       for (let i = 0; i < 4; i++) {
         await manager.checkHealth(testUserId);
       }
-      
-      // Debug: log session map (for troubleshooting, can be removed)
+      // Debug log
       // eslint-disable-next-line no-console
-      // console.log('Session map after recoveries:', manager["sessions"]);
+      // console.log('Session after max recoveries:', await manager.getSession(testUserId));
       const session = await manager.getSession(testUserId);
       expect(session).toBeNull();
     });

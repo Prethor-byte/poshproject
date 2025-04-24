@@ -19,7 +19,10 @@ interface RequestRecord {
 }
 
 export class RateLimiter {
-  private static instance: RateLimiter;
+  public static _resetInstanceForTests() {
+    RateLimiter.instance = undefined;
+  }
+  private static instance: RateLimiter | undefined;
   private requests: RequestRecord[] = [];
   private activeRequests: number = 0;
   private userLastRequest: Map<string, Date> = new Map();
@@ -43,21 +46,39 @@ export class RateLimiter {
   }
 
   private constructor(private config: RateLimitConfig) {
+    // Detailed debug logging for constructor
+    // eslint-disable-next-line no-console
+    console.error('[RateLimiter] Constructed with config:', config);
+    // eslint-disable-next-line no-console
+    console.error('[RateLimiter] Stack trace:', new Error('Stack trace for RateLimiter instantiation'));
+    // Runtime checks for required config fields
+    if (
+      config.maxRequestsPerMinute === undefined ||
+      config.maxRequestsPerHour === undefined ||
+      config.maxConcurrentRequests === undefined ||
+      config.cooldownPeriod === undefined
+    ) {
+      // eslint-disable-next-line no-console
+      console.error('[RateLimiter] Invalid config:', config);
+      throw new Error(
+        'RateLimiter config missing required fields: ' + JSON.stringify(config)
+      );
+    }
     // For debug
     logger.debug('RateLimiter initialized', { config });
   }
 
   static getInstance(config?: RateLimitConfig): RateLimiter {
+    // eslint-disable-next-line no-console
+    console.log('[RateLimiter.getInstance] called with config:', config, 'current instance:', RateLimiter.instance);
     if (!RateLimiter.instance) {
       if (!config) {
-        config = {
-          maxRequestsPerMinute: 30,
-          maxRequestsPerHour: 300,
-          maxConcurrentRequests: 5,
-          cooldownPeriod: 2000, // 2 seconds between requests
-        };
+        throw new Error('RateLimiter config required for first initialization');
       }
       RateLimiter.instance = new RateLimiter(config);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('[RateLimiter.getInstance] Returning existing instance');
     }
     return RateLimiter.instance;
   }
