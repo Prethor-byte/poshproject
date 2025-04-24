@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'ts-jest',
+
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts'],
@@ -8,9 +8,7 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.test.json'
-    }]
+    '^.+\\.(ts|tsx)$': 'babel-jest',
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
   verbose: true,

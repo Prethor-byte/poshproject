@@ -29,11 +29,15 @@ describe('RetryManager', () => {
       retryableErrors: [ErrorType.NETWORK]
     });
     let attempts = 0;
-    await expect(manager.executeWithBackoff(async () => {
-      attempts++;
-      throw new AutomationError('fail', ErrorType.NETWORK);
-    })).rejects.toThrow('Operation failed after 2 attempts');
-    expect(attempts).toBe(2);
+    try {
+      await manager.executeWithBackoff(async () => {
+        attempts++;
+        throw new AutomationError('fail', ErrorType.NETWORK);
+      });
+    } catch (err) {
+      expect((err as Error).message).toContain('Operation failed after 2 attempts');
+      expect(attempts).toBe(2);
+    }
   });
 
   it('throws immediately on non-retryable error', async () => {

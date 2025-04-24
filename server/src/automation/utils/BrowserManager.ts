@@ -13,7 +13,7 @@ export class BrowserManager {
   private retryManager: RetryManager;
   private rateLimiter: RateLimiter;
   private monitorInterval?: NodeJS.Timeout;
-  private sessionLocks: Map<string, Promise<void>> = new Map(); // For race condition prevention
+  private sessionLocks: Map<string, Promise<any>> = new Map(); // For race condition prevention
 
   private constructor() {
     this.sessions = new Map();
@@ -299,7 +299,8 @@ export class BrowserManager {
         this.rateLimiter.releaseToken(userId);
       }
     })();
-    this.sessionLocks.set(userId, lockPromise);
+    // Store as Promise<any> to avoid type errors with returned values
+    this.sessionLocks.set(userId, lockPromise as Promise<any>);
     try {
       return await lockPromise;
     } finally {

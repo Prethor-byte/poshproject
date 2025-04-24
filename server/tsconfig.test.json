@@ -4,7 +4,8 @@
     "types": ["jest", "node"],
     "esModuleInterop": true,
     "module": "CommonJS",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "lib": ["esnext", "dom"]
   },
   "include": ["src/**/*.ts", "src/**/*.test.ts"],
   "exclude": ["node_modules", "dist"]

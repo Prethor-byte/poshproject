@@ -14,7 +14,6 @@ jest.mock('../utils/logger', () => ({
         debug: jest.fn(),
     }
 }));
-// Create a proper mock implementation of AutomationError
 class MockAutomationError extends Error {
     constructor(message, type, recoverable = true) {
         super(message);
@@ -31,6 +30,8 @@ jest.mock('../utils/errors', () => ({
         SETUP_FAILED: 'SETUP_FAILED',
         AUTH_FAILED: 'AUTH_FAILED',
         CAPTCHA: 'CAPTCHA',
+        NETWORK: 'NETWORK',
+        UNKNOWN: 'UNKNOWN'
     }
 }));
 describe('BrowserManager', () => {
@@ -78,6 +79,11 @@ describe('BrowserManager', () => {
     afterEach(async () => {
         // Clean up after each test
         await manager.closeAllSessions();
+        manager.stopMonitoring();
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        manager.stopMonitoring();
     });
     it('should create a new session successfully', async () => {
         const { browser, page } = await manager.createSession(mockProfile, testUserId);
@@ -217,6 +223,79 @@ describe('BrowserManager', () => {
             await manager.createSession(secondProfile, 'test-user-2');
             mockContext.close.mockRejectedValue(new Error('Close failed'));
             await expect(manager.closeAllSessions()).resolves.not.toThrow();
+        });
+    });
+    describe('Session Health Monitoring', () => {
+        it('should update session metrics correctly', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            const metrics = {
+                operationDuration: 100,
+                success: true
+            };
+            await manager.updateSessionMetrics(testUserId, metrics);
+            const session = await manager.getSession(testUserId);
+            expect(session?.health.metrics.totalOperations).toBe(1);
+            expect(session?.health.metrics.failedOperations).toBe(0);
+            expect(session?.health.metrics.lastResponseTime).toBe(100);
+            expect(session?.health.metrics.averageResponseTime).toBe(100);
+        });
+        it('should track failed operations', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            const metrics = {
+                operationDuration: 100,
+                success: false,
+                errorType: errors_1.ErrorType.NETWORK
+            };
+            await manager.updateSessionMetrics(testUserId, metrics);
+            const session = await manager.getSession(testUserId);
+            expect(session?.health.metrics.totalOperations).toBe(1);
+            expect(session?.health.metrics.failedOperations).toBe(1);
+        });
+        it('should update health status based on metrics', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            // Simulate multiple failed operations
+            const metrics = {
+                operationDuration: 100,
+                success: false,
+                errorType: errors_1.ErrorType.NETWORK
+            };
+            for (let i = 0; i < 3; i++) {
+                await manager.updateSessionMetrics(testUserId, metrics);
+            }
+            const session = await manager.getSession(testUserId);
+            expect(session?.health.status).toBe('degraded');
+        });
+        it('should mark session as failed with high failure rate', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            // Simulate many failed operations
+            const metrics = {
+                operationDuration: 100,
+                success: false,
+                errorType: errors_1.ErrorType.NETWORK
+            };
+            for (let i = 0; i < 6; i++) {
+                await manager.updateSessionMetrics(testUserId, metrics);
+            }
+            const session = await manager.getSession(testUserId);
+            expect(session?.health.status).toBe('failed');
+        });
+        it('should attempt session recovery when health check fails', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
+            // Trigger health check
+            await manager.checkHealth(testUserId);
+            const session = await manager.getSession(testUserId);
+            expect(session?.health.recoveryAttempts).toBeGreaterThan(0);
+        });
+        it('should close session after max recovery attempts', async () => {
+            await manager.createSession(mockProfile, testUserId);
+            mockContext.newPage.mockRejectedValue(new Error('Page creation failed'));
+            // Simulate multiple failed recoveries
+            for (let i = 0; i < 4; i++) {
+                await manager.checkHealth(testUserId);
+            }
+            const session = await manager.getSession(testUserId);
+            expect(session).toBeNull();
         });
     });
 });
