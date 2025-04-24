@@ -1,7 +1,6 @@
-import { useAuth } from '@/hooks/use-auth';
 
 export function SettingsPage() {
-  const { user } = useAuth();
+  // Removed unused 'user' variable
 
   return (
     <div className="space-y-6">

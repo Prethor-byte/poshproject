@@ -26,11 +26,7 @@ const markdownStyles = {
   pre: "bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 overflow-x-auto",
 };
 
-interface TableOfContentsItem {
-  id: string;
-  title: string;
-  level: number;
-}
+
 
 export function BlogPostPage() {
   const { slug } = useParams();

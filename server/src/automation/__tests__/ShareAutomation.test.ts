@@ -13,6 +13,9 @@ describe('ShareAutomation', () => {
   const testUserId = 'test-user-123';
 
   beforeEach(() => {
+    // Reset the RateLimiter singleton to prevent test interference
+    const { RateLimiter } = require('../utils/RateLimiter');
+    RateLimiter.getInstance()._reset();
     jest.clearAllMocks();
 
     // Create mock browser and page
@@ -34,6 +37,7 @@ describe('ShareAutomation', () => {
 
     // Mock BrowserManager
     (BrowserManager.getInstance as jest.Mock).mockReturnValue({
+      getSession: jest.fn().mockResolvedValue(null), // Added mock for getSession
       createSession: jest.fn().mockResolvedValue({ browser: mockBrowser, page: mockPage }),
       checkHealth: jest.fn().mockResolvedValue({ status: 'healthy' }),
       closeSession: jest.fn(),
@@ -93,16 +97,14 @@ describe('ShareAutomation', () => {
 
     it('should handle browser creation failure', async () => {
       // Mock BrowserManager.createSession to throw immediately
+      jest.spyOn(require('../../utils/browserProfile'), 'createBrowserProfile').mockResolvedValue({} as any);
       const mockBrowserManager = {
+        getSession: jest.fn().mockResolvedValue(null),
         createSession: jest.fn().mockRejectedValue(new Error('Failed to create browser')),
       };
       (BrowserManager.getInstance as jest.Mock).mockReturnValue(mockBrowserManager);
 
-      // Mock page and browser to verify they're not used
-      const mockPage = { close: jest.fn() };
-      const mockBrowser = { close: jest.fn() };
-
-      // Create a new instance for this test to avoid interference
+      // Now create the ShareAutomation instance
       const localShareAutomation = new ShareAutomation({ username: 'testuser', userId: testUserId });
 
       await expect(localShareAutomation.initialize()).rejects.toThrow(
@@ -110,8 +112,6 @@ describe('ShareAutomation', () => {
       );
 
       expect(mockBrowserManager.createSession).toHaveBeenCalled();
-      expect(mockPage.close).not.toHaveBeenCalled();
-      expect(mockBrowser.close).not.toHaveBeenCalled();
     });
 
     it('should handle navigation failure', async () => {
@@ -262,6 +262,9 @@ describe('ShareAutomation', () => {
     });
 
     it('should properly clean up resources', async () => {
+      // Set internal state so cleanup will call the mocks
+      (shareAutomation as any).browser = mockBrowser;
+      (shareAutomation as any).page = mockPage;
       await shareAutomation.cleanup();
 
       expect(mockPage.close).toHaveBeenCalled();
@@ -276,6 +279,9 @@ describe('ShareAutomation', () => {
     });
 
     it('should handle cleanup when resources are already null', async () => {
+      // Set internal state so cleanup will call the mocks
+      (shareAutomation as any).browser = mockBrowser;
+      (shareAutomation as any).page = mockPage;
       await shareAutomation.cleanup(); // First cleanup
       await shareAutomation.cleanup(); // Second cleanup should not throw
 

@@ -5,7 +5,7 @@ export const FEATURES = {
 
   // Set to true to enable detailed proxy statistics and monitoring
   ENABLE_PROXY_STATS: false,
-} as const;
+};
 
 // Type for feature flags
 export type FeatureFlags = typeof FEATURES;

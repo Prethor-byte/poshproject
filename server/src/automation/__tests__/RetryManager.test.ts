@@ -14,6 +14,9 @@ describe('RetryManager', () => {
   let retryManager: RetryManager;
 
   beforeEach(() => {
+    // Reset the RateLimiter singleton to prevent test interference
+    const { RateLimiter } = require('../utils/RateLimiter');
+    RateLimiter.getInstance()._reset();
     jest.clearAllMocks();
     retryManager = new RetryManager({
       maxAttempts: 3,

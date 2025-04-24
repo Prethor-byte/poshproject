@@ -65,7 +65,10 @@ export class RateLimiter {
   private cleanOldRequests(): void {
     const now = this._now();
     const before = this.requests.length;
-    // Remove any requests older than 1 hour (for memory efficiency)
+    // Only remove requests older than 1 hour (do NOT remove requests within the last hour)
+    const purged = this.requests.filter(
+      r => now.getTime() - r.timestamp.getTime() >= 60 * 60 * 1000
+    );
     this.requests = this.requests.filter(
       r => now.getTime() - r.timestamp.getTime() < 60 * 60 * 1000
     );
@@ -75,9 +78,10 @@ export class RateLimiter {
         this.userLastRequest.delete(userId);
       }
     }
-    logger.debug('cleanOldRequests', { before, after: this.requests.length });
+    logger.debug('cleanOldRequests', { before, after: this.requests.length, purged });
   }
 
+  // Returns the number of requests for this user in the last 60 seconds (strictly < 60s window)
   private getRequestsInLastMinute(userId: string): number {
     const now = this._now();
     return this.requests.filter(
@@ -85,6 +89,7 @@ export class RateLimiter {
     ).length;
   }
 
+  // Returns the number of requests for this user in the last hour (strictly < 1h window)
   private getRequestsInLastHour(userId: string): number {
     const now = this._now();
     return this.requests.filter(
@@ -170,20 +175,31 @@ export class RateLimiter {
 
   async acquireToken(userId: string): Promise<boolean> {
     this.cleanOldRequests();
+    const now = this._now();
+    const beforeMinute = this.getRequestsInLastMinute(userId);
+    const beforeHour = this.getRequestsInLastHour(userId);
+    // eslint-disable-next-line no-console
+    console.log('[acquireToken] BEFORE', { userId, now: now.toISOString(), beforeMinute, beforeHour });
     logger.debug('acquireToken called', { userId, activeRequests: this.activeRequests });
     if (!this.canMakeRequest(userId)) {
       logger.debug('acquireToken: cannot make request', { userId });
+      // eslint-disable-next-line no-console
+      console.log('[acquireToken] BLOCKED', { userId, now: now.toISOString(), beforeMinute, beforeHour });
       return false;
     }
     this.activeRequests++;
     const userActive = this.userActiveRequests.get(userId) || 0;
     this.userActiveRequests.set(userId, userActive + 1);
-    const now = this._now();
     this.requests.push({
       timestamp: now,
       userId
     });
     this.userLastRequest.set(userId, now);
+    const afterMinute = this.getRequestsInLastMinute(userId);
+    const afterHour = this.getRequestsInLastHour(userId);
+    const userReqs = this.requests.filter(r => r.userId === userId).map(r => r.timestamp.toISOString());
+    // eslint-disable-next-line no-console
+    console.log('[acquireToken] AFTER', { userId, now: now.toISOString(), afterMinute, afterHour, userReqs });
     logger.debug('acquireToken: token granted', { userId, activeRequests: this.activeRequests, userActive: this.userActiveRequests.get(userId) });
     return true;
   }

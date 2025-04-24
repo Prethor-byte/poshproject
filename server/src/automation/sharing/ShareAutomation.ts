@@ -162,6 +162,12 @@ export class ShareAutomation {
 
   async cleanup(): Promise<void> {
     try {
+      if (this.page) {
+        await this.page.close();
+      }
+      if (this.browser) {
+        await this.browser.close();
+      }
       await this.browserManager.closeSession(this.config.userId);
       this.browser = null;
       this.page = null;

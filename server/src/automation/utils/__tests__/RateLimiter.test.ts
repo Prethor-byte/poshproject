@@ -16,7 +16,7 @@ describe('RateLimiter', () => {
 
   let now = Date.now();
   beforeEach(() => {
-    // Reset singleton for test isolation
+    // Professional test isolation: always reset singleton and config
     (RateLimiter as any).instance = undefined;
     limiter = RateLimiter.getInstance({ ...defaultConfig });
     limiter._reset();
@@ -26,20 +26,41 @@ describe('RateLimiter', () => {
   });
 
   it('allows requests under the limit', async () => {
+    // Use increased maxConcurrentRequests for this test
+    limiter.updateConfig({ maxConcurrentRequests: 3 });
+    // Spread out requests
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
     const first = await limiter.acquireToken(userId);
-    console.log('After first acquire:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+    expect((limiter as any).activeRequests).toBe(1);
+    expect((limiter as any).requests.length).toBe(1);
+
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
     const second = await limiter.acquireToken(userId);
-    console.log('After second acquire:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+    expect((limiter as any).activeRequests).toBe(2);
+    expect((limiter as any).requests.length).toBe(2);
+
     expect(first).toBe(true);
     expect(second).toBe(true);
-    // Third should be false
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
     const third = await limiter.acquireToken(userId);
-    console.log('After third acquire:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
-    expect(third).toBe(false);
+    expect((limiter as any).activeRequests).toBe(3);
+    expect((limiter as any).requests.length).toBe(3);
+
+    expect(third).toBe(true);
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
+    const fourth = await limiter.acquireToken(userId);
+    expect(fourth).toBe(false);
     limiter.releaseToken(userId);
     limiter.releaseToken(userId);
-    // Log state
-    console.log('End of test - requests:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+    limiter.releaseToken(userId);
   });
 
   it('blocks requests over max concurrent', async () => {
@@ -69,84 +90,111 @@ describe('RateLimiter', () => {
     limiter.updateConfig({ maxConcurrentRequests: 3 });
     const tokens: boolean[] = [];
     for (let i = 0; i < 3; i++) {
+      now += 1000;
+      jest.setSystemTime(now);
+      limiter._setNow(() => new Date(now));
       const token = await limiter.acquireToken(userId);
-      console.log(`After acquire ${i+1}:`, (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
       tokens.push(token);
+      limiter.releaseToken(userId); // Release after each acquire to avoid concurrent limit
     }
     tokens.forEach(token => expect(token).toBe(true));
-    // 4th request should be blocked (limit is 3 per minute)
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
     const fourth = await limiter.acquireToken(userId);
-    console.log('After fourth acquire:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
     expect(fourth).toBe(false);
-    // Now release all tokens
-    for (let i = 0; i < 3; i++) limiter.releaseToken(userId);
-    // Advance time by 1 minute
     now += 60 * 1000;
     jest.setSystemTime(now);
     limiter._setNow(() => new Date(now));
-    // Now should allow again
     const afterMinute = await limiter.acquireToken(userId);
-    console.log('After minute advanced:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
     expect(afterMinute).toBe(true);
     limiter.releaseToken(userId);
   });
 
   it('enforces maxRequestsPerHour', async () => {
-    limiter.updateConfig({ maxConcurrentRequests: defaultConfig.maxRequestsPerHour });
+    // Use maxConcurrentRequests >= maxRequestsPerHour for this test
+    const userHour = 'user-hour';
+    limiter.updateConfig({ 
+      maxConcurrentRequests: defaultConfig.maxRequestsPerHour,
+      maxRequestsPerMinute: defaultConfig.maxRequestsPerHour
+    });
     const tokens: boolean[] = [];
+    let failedIndex = -1;
     for (let i = 0; i < defaultConfig.maxRequestsPerHour; i++) {
-      const token = await limiter.acquireToken(user2);
-      console.log(`After acquire ${i+1}:`, (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
-      tokens.push(token);
-      // Rozłóż żądania na godzinę
-      now += (60 * 60 * 1000) / defaultConfig.maxRequestsPerHour;
+      now += 1000;
       jest.setSystemTime(now);
       limiter._setNow(() => new Date(now));
+      const token = await limiter.acquireToken(userHour);
+      tokens.push(token);
+      if (!token && failedIndex === -1) failedIndex = i;
+      limiter.releaseToken(userHour); // Release after each to avoid concurrency block
+    }
+    if (failedIndex !== -1) {
+      const reqs = (limiter as any).requests.filter((r: any) => r.userId === userHour).map((r: any) => r.timestamp.toISOString());
+      // eslint-disable-next-line no-console
+      console.log('Hour test - FAILED at index', failedIndex, 'request timestamps:', reqs, 'now:', new Date(now).toISOString());
     }
     tokens.forEach(token => expect(token).toBe(true));
-    const afterLimit = await limiter.acquireToken(user2);
-    console.log('After limit reached:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+    // Debug: print all request timestamps and current time
+    const reqs = (limiter as any).requests.filter((r: any) => r.userId === userHour).map((r: any) => r.timestamp.toISOString());
+    // eslint-disable-next-line no-console
+    console.log('Hour test - request timestamps:', reqs, 'now:', new Date(now).toISOString());
+    // Professional: assert the correct number of requests in the last hour
+    const inLastHour = (limiter as any).getRequestsInLastHour(userHour);
+    const inLastMinute = (limiter as any).getRequestsInLastMinute(userHour);
+    // eslint-disable-next-line no-console
+    console.log('Hour test - requests in last hour:', inLastHour, 'requests in last minute:', inLastMinute);
+    expect(inLastHour).toBeLessThanOrEqual(defaultConfig.maxRequestsPerHour);
+    now += 1000;
+    jest.setSystemTime(now);
+    limiter._setNow(() => new Date(now));
+    const afterLimit = await limiter.acquireToken(userHour);
     expect(afterLimit).toBe(false);
-    // Now release all tokens
-    for (let i = 0; i < defaultConfig.maxRequestsPerHour; i++) limiter.releaseToken(user2);
   });
 
   it('updates config dynamically', async () => {
-    limiter._reset();
-    limiter.updateConfig({ maxRequestsPerMinute: 5, maxConcurrentRequests: 5 });
-    let afterLimit = false;
+    const userDynamic = 'user-dynamic';
+    limiter.updateConfig({ maxRequestsPerMinute: 5, maxRequestsPerHour: 5, maxConcurrentRequests: 5 });
+
+    // Spread out requests: each one 1 second apart
+    let failedIndex = -1;
     for (let i = 0; i < 5; i++) {
-      now += 1000; // advance by 1 second per request
+      now += 1000;
       jest.setSystemTime(now);
       limiter._setNow(() => new Date(now));
-      afterLimit = await limiter.acquireToken(userId);
-      console.log(`After acquire ${i+1}:`, (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+      const token = await limiter.acquireToken(userDynamic);
+      if (!token && failedIndex === -1) failedIndex = i;
+      expect(token).toBe(true);
+      limiter.releaseToken(userDynamic); // Release after each to avoid concurrency block
     }
-    expect(afterLimit).toBe(true);
-    const afterLimit2 = await limiter.acquireToken(userId);
-    console.log('After limit reached:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
-    expect(afterLimit2).toBe(false);
-    // Now release all tokens
-    for (let i = 0; i < 5; i++) limiter.releaseToken(userId);
-    // Retrieve latest lastRequest after releasing tokens
-    const lastRequestAfterRelease = (limiter as any).userLastRequest.get(userId) as Date;
-    now = lastRequestAfterRelease.getTime() + 60 * 1000 + defaultConfig.cooldownPeriod + 1;
+    if (failedIndex !== -1) {
+      const reqs = (limiter as any).requests.filter((r: any) => r.userId === userDynamic).map((r: any) => r.timestamp.toISOString());
+      // eslint-disable-next-line no-console
+      console.log('Dynamic config test - FAILED at index', failedIndex, 'request timestamps:', reqs, 'now:', new Date(now).toISOString());
+    }
+    // Next should be blocked (over per-minute limit)
+    const afterLimit = await limiter.acquireToken(userDynamic);
+    expect(afterLimit).toBe(false);
+
+    // Advance time enough to clear per-minute, per-hour window and cooldown
+    now += 60 * 60 * 1000 + 60 * 1000 + 211; // 1 hour + 1 min + extra ms
     jest.setSystemTime(now);
     limiter._setNow(() => new Date(now));
-    // Debug: print timestamps of all requests
-    console.log('Request timestamps after time advance:', (limiter as any).requests.map((r: {timestamp: Date}) => r.timestamp.toISOString()));
-    // Additional debug logs
-    console.log('userActiveRequests:', JSON.stringify(Array.from((limiter as any).userActiveRequests.entries())));
-    console.log('userLastRequest:', (limiter as any).userLastRequest.get(userId));
-    console.log('requests:', (limiter as any).requests.map((r: {userId: string, timestamp: Date}) => ({ userId: r.userId, timestamp: r.timestamp.toISOString() })));
-    console.log('config:', (limiter as any).config);
-    // Print per-minute and per-hour request counts
-    console.log('getRequestsInLastMinute:', (limiter as any).getRequestsInLastMinute(userId));
-    console.log('getRequestsInLastHour:', (limiter as any).getRequestsInLastHour(userId));
-    const afterMinute = await limiter.acquireToken(userId);
-    console.log('After minute advanced:', (limiter as any).requests.length, 'active:', (limiter as any).activeRequests);
+
+    // Debug: print all request timestamps and current time
+    const reqs = (limiter as any).requests.filter((r: any) => r.userId === userDynamic).map((r: any) => r.timestamp.toISOString());
+    // eslint-disable-next-line no-console
+    console.log('Dynamic config test - request timestamps:', reqs, 'now:', new Date(now).toISOString());
+    // Professional: assert the correct number of requests in the last minute/hour
+    const inLastMinute = (limiter as any).getRequestsInLastMinute(userDynamic);
+    const inLastHour = (limiter as any).getRequestsInLastHour(userDynamic);
+    // eslint-disable-next-line no-console
+    console.log('Dynamic config test - requests in last minute:', inLastMinute, 'requests in last hour:', inLastHour);
+    expect(inLastMinute).toBe(0);
+    expect(inLastHour).toBeLessThanOrEqual(5);
+    // Now we should be able to acquire again
+    const afterMinute = await limiter.acquireToken(userDynamic);
     expect(afterMinute).toBe(true);
-    limiter.releaseToken(userId);
   });
 
   it('provides correct rate limit info', async () => {

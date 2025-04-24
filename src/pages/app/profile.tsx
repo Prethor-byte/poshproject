@@ -27,7 +27,7 @@ export function ProfilePage() {
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={user?.photoURL || undefined} />
+                <AvatarImage src={user?.user_metadata?.avatar_url || undefined} />
                 <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <Button variant="outline">Change Picture</Button>
@@ -40,7 +40,7 @@ export function ProfilePage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="name">Display Name</Label>
-                <Input id="name" value={user?.displayName || ''} placeholder="Enter your name" />
+                <Input id="name" value={user?.user_metadata?.full_name || ''} placeholder="Enter your name" />
               </div>
             </div>
           </CardContent>

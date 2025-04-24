@@ -54,6 +54,10 @@ describe('BrowserManager', () => {
     // Reset all mocks
     jest.clearAllMocks();
 
+    // Reset the RateLimiter singleton to prevent test interference
+    const { RateLimiter } = require('../utils/RateLimiter');
+    RateLimiter.getInstance()._reset();
+
     // Create mock page
     mockPage = {
       close: jest.fn(),

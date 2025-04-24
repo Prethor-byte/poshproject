@@ -30,7 +30,7 @@ export const AppMenu = () => {
       }
 
       // Store the cookies in localStorage or your preferred storage
-      localStorage.setItem('poshmark_cookies', JSON.stringify(result.cookies));
+      localStorage.setItem('poshmark_cookies', JSON.stringify(result.session?.cookies ?? {}));
       
       // Redirect to dashboard
       navigate('/'); 
