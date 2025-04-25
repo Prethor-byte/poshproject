@@ -20,6 +20,15 @@ beforeAll(() => {
   process.env.POSHMARK_PASSWORD = 'test-password';
   process.env.NODE_ENV = 'test';
   process.env.LOG_LEVEL = 'error';
+
+  // Ensure RateLimiter singleton is initialized for all tests
+  const { RateLimiter } = require('../automation/utils/RateLimiter');
+  RateLimiter.getInstance({
+    maxRequestsPerMinute: 30,
+    maxRequestsPerHour: 300,
+    maxConcurrentRequests: 5,
+    cooldownPeriod: 2000
+  })._reset();
 });
 
 afterAll(async () => {

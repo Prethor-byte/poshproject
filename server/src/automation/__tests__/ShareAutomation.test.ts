@@ -6,6 +6,16 @@ import { AutomationError, ErrorType } from '../utils/errors';
 jest.mock('../utils/BrowserManager');
 jest.mock('../utils/logger');
 
+beforeAll(() => {
+  const { RateLimiter } = require('../utils/RateLimiter');
+  RateLimiter.getInstance({
+    maxRequestsPerMinute: 30,
+    maxRequestsPerHour: 300,
+    maxConcurrentRequests: 5,
+    cooldownPeriod: 2000
+  })._reset();
+});
+
 describe('ShareAutomation', () => {
   afterAll(() => {
     const manager = require('../utils/BrowserManager').BrowserManager.getInstance();

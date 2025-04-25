@@ -13,6 +13,16 @@ jest.mock('../utils/logger', () => ({
   }
 }));
 
+beforeAll(() => {
+  const { RateLimiter } = require('../utils/RateLimiter');
+  RateLimiter.getInstance({
+    maxRequestsPerMinute: 30,
+    maxRequestsPerHour: 300,
+    maxConcurrentRequests: 5,
+    cooldownPeriod: 2000
+  })._reset();
+});
+
 describe('RetryManager', () => {
   let RetryManagerClass: any;
   let retryManager: any; // Will be assigned after dynamic import

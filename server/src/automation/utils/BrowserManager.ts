@@ -23,7 +23,10 @@ export class BrowserManager {
     this.rateLimiter = RateLimiter.getInstance();
     // Never start the monitor interval in test environments or if explicitly disabled for tests
     if (!BrowserManager.disableMonitoringForTests && process.env.NODE_ENV !== 'test') {
+      logger.debug('[BrowserManager] Monitoring enabled: starting monitorInterval');
       this.startMonitoring();
+    } else {
+      logger.debug('[BrowserManager] Monitoring disabled for tests or NODE_ENV=test');
     }
   }
 
@@ -72,18 +75,26 @@ export class BrowserManager {
   }
 
   private startMonitoring(): void {
+    // Diagnostic log for monitoring start
+    logger.debug('[BrowserManager] startMonitoring called');
     // Clear any existing interval
     if (this.monitorInterval) {
       clearInterval(this.monitorInterval);
+      logger.debug('[BrowserManager] Existing monitorInterval cleared');
     }
     // Start health check interval
-    this.monitorInterval = setInterval(() => this.monitorSessions(), 60000);
+    this.monitorInterval = setInterval(() => {
+      logger.debug('[BrowserManager] monitorSessions interval triggered');
+      this.monitorSessions();
+    }, 60000);
+    logger.debug('[BrowserManager] monitorInterval set');
   }
 
   public stopMonitoring(): void {
     if (this.monitorInterval) {
       clearInterval(this.monitorInterval);
       this.monitorInterval = undefined;
+      logger.debug('[BrowserManager] monitorInterval cleared in stopMonitoring');
     }
   }
 
