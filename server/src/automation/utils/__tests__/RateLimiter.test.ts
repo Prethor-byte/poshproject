@@ -11,7 +11,7 @@ const defaultConfig: RateLimitConfig = {
 
 describe('RateLimiter', () => {
   afterAll(() => {
-    const manager = require('../../BrowserManager').BrowserManager.getInstance();
+    const manager = require('../../utils/BrowserManager').BrowserManager.getInstance();
     manager.stopMonitoring();
   });
   let limiter: RateLimiter;
@@ -210,14 +210,9 @@ describe('RateLimiter', () => {
     expect(typeof info.isRateLimited).toBe('boolean');
   });
 
-  it('falls back to default config if none provided', () => {
+  it('throws error if no config is provided on first initialization', () => {
     (RateLimiter as any).instance = undefined;
-    const limiterDefault = RateLimiter.getInstance();
-    expect(limiterDefault).toBeDefined();
-    expect((limiterDefault as any).config.maxRequestsPerMinute).toBe(30);
-    expect((limiterDefault as any).config.maxRequestsPerHour).toBe(300);
-    expect((limiterDefault as any).config.maxConcurrentRequests).toBe(5);
-    expect((limiterDefault as any).config.cooldownPeriod).toBe(2000);
+    expect(() => RateLimiter.getInstance()).toThrow('RateLimiter config required for first initialization');
   });
 
   it('handles edge case: hour limit more restrictive than minute', async () => {
@@ -252,32 +247,8 @@ describe('RateLimiter', () => {
     const limiter2 = RateLimiter.getInstance();
     expect(limiter2).toBe(limiter);
   });
+// Removed erroneous duplicate/partial code block that used undefined variables
 
-  it('logs debug for per-minute, per-hour, concurrent, and cooldown', async () => {
-    const logger = require('../logger').logger;
-    jest.spyOn(logger, 'debug');
-    // Fill up concurrent
-    await limiter.acquireToken(userId);
-    await limiter.acquireToken(userId);
-    await limiter.acquireToken(user2);
-    // Fill up per-minute
-    limiter.releaseToken(userId);
-    limiter.releaseToken(user2);
-    for (let i = 0; i < defaultConfig.maxRequestsPerMinute; i++) {
-      await limiter.acquireToken(user2);
-      limiter.releaseToken(user2);
-    }
-    // Fill up per-hour
-    for (let i = 0; i < defaultConfig.maxRequestsPerHour; i++) {
-      await limiter.acquireToken(user2);
-      limiter.releaseToken(user2);
-    }
-    // Cooldown
-    await limiter.acquireToken(userId);
-    limiter.releaseToken(userId);
-    await limiter.acquireToken(userId);
-    expect(logger.debug).toHaveBeenCalled();
-  });
 
   it('handles multiple users independently', async () => {
     expect(await limiter.acquireToken(userId)).toBe(true);

@@ -3,7 +3,7 @@ import { AutomationError, ErrorType } from '../errors';
 
 describe('RetryManager', () => {
   afterAll(() => {
-    const manager = require('../../BrowserManager').BrowserManager.getInstance();
+    const manager = require('../../utils/BrowserManager').BrowserManager.getInstance();
     manager.stopMonitoring();
   });
   it('retries on retryable error and succeeds', async () => {

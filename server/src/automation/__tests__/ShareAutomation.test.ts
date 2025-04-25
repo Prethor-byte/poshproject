@@ -19,7 +19,9 @@ beforeAll(() => {
 describe('ShareAutomation', () => {
   afterAll(() => {
     const manager = require('../utils/BrowserManager').BrowserManager.getInstance();
-    manager.stopMonitoring();
+    if (typeof manager.stopMonitoring === 'function') {
+      manager.stopMonitoring();
+    }
   });
   let shareAutomation: ShareAutomation;
   let mockBrowser: jest.Mocked<Browser>;
@@ -111,7 +113,7 @@ describe('ShareAutomation', () => {
 
     it('should handle browser creation failure', async () => {
       // Mock BrowserManager.createSession to throw immediately
-      jest.spyOn(require('../../utils/browserProfile'), 'createBrowserProfile').mockResolvedValue({} as any);
+      jest.spyOn(require('../utils/browserProfile'), 'createBrowserProfile').mockResolvedValue({} as any);
       const mockBrowserManager = {
         getSession: jest.fn().mockResolvedValue(null),
         createSession: jest.fn().mockRejectedValue(new Error('Failed to create browser')),
