@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "./navbar";
 import { CookieBanner } from "@/components/compliance/cookie-banner";
+import { PageTransition } from "@/components/layout/page-transition";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -13,7 +14,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <Navbar />
       <CookieBanner />
       <div className="flex-1 flex flex-col">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
       <Footer />
     </div>
