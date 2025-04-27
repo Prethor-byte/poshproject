@@ -57,13 +57,17 @@ export function AccountsPage() {
     }
   };
 
+import { Box, Group, Title } from '@mantine/core';
+
+export function AccountsPage() {
+  // ...rest of component logic
   return (
-    <div className="px-4 sm:container sm:mx-auto py-4 sm:py-8 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl font-bold">Poshmark Accounts</h1>
+    <Box px={{ base: 0, sm: 24 }} py={{ base: 16, sm: 32 }}>
+      <Group justify="space-between" style={{ marginBottom: 24 }}>
+        <Title order={1}>Poshmark Accounts</Title>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">Connect Account</Button>
+            <Button>Connect Account</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -96,8 +100,7 @@ export function AccountsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-
+      </Group>
       {/* Error Alert */}
       {error && (
         <Alert variant="destructive" className="mb-2 sm:mb-4">
@@ -175,6 +178,6 @@ export function AccountsPage() {
           <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">Connect Account</Button>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }
