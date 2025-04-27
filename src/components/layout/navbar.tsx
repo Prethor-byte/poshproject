@@ -27,18 +27,15 @@ export function Navbar() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/80">
+    <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80 shadow-sm transition-shadow">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <button 
-              onClick={() => scrollToSection("top")}
-              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md"
-              aria-label="Back to top"
-            >
-              <span className="text-xl font-bold text-gray-900 dark:text-gray-50">PoshAuto</span>
-            </button>
+            <Link to="/" className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md group">
+              <img src="/logo.svg" alt="PoshAuto Logo" className="h-7 w-7" />
+              <span className="text-2xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight group-hover:text-primary transition-colors">PoshAuto</span>
+            </Link>
           </div>
 
           {/* Desktop Navigation - Center */}
@@ -80,12 +77,13 @@ export function Navbar() {
           <div className="hidden items-center space-x-4 lg:flex">
             <Link
               to="/login"
-              className="text-base font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+              className="text-base font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary"
+              aria-label="Sign in to your account"
             >
               Sign In
             </Link>
-            <Link to="/register">
-              <Button>Sign Up</Button>
+            <Link to="/register" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md" aria-label="Create a new account">
+              <Button size="lg" className="bg-primary text-white font-bold px-6 py-2 shadow-md hover:bg-primary/90 transition-colors">Sign Up</Button>
             </Link>
             <ThemeSwitch />
           </div>

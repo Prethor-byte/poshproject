@@ -138,112 +138,106 @@ export function BlogPostPage() {
       <Helmet>
         <title>{post.title} | PoshAuto Blog</title>
         <meta name="description" content={post.excerpt} />
-        <meta name="keywords" content={post.tags.join(", ")} />
+        <meta property="og:type" content="article" />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt} />
-        <meta property="og:type" content="article" />
         <meta property="og:image" content={post.featuredImage} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="article:published_time" content={post.publishedAt} />
-        <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={post.category.name} />
-        {post.tags.map(tag => (
-          <meta key={tag} property="article:tag" content={tag} />
-        ))}
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
       </Helmet>
 
       {/* Reading Progress Bar */}
-      <div 
-        className="fixed top-0 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700 z-50"
-        style={{ transform: `translateX(${readingProgress - 100}%)` }}
-      >
-        <div className="h-full bg-primary transition-transform duration-150" />
+      <div className="fixed top-0 left-0 w-full h-1 z-40">
+        <div
+          className="bg-primary transition-all duration-200"
+          style={{ width: `${readingProgress}%`, height: '100%' }}
+        />
       </div>
 
-      <article className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Back to Blog */}
-        <a 
-          href="/blog"
-          className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary mb-8 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Blog
-        </a>
+      <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <button
+            className="flex items-center gap-2 text-primary hover:underline mb-10"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" /> Back to Blog
+          </button>
 
-        <header className="mb-12">
-          <div className="space-y-4 text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-              {post.title}
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              {post.excerpt}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="flex items-center gap-4">
-              <LazyLoadImage
-                alt={post.author.name}
-                src={post.author.avatar}
-                effect="blur"
-                className="w-12 h-12 rounded-full"
-              />
+          {/* Title & Meta */}
+          <h1 className="text-5xl font-extrabold text-gray-900 dark:text-gray-50 mb-6 leading-tight">{post.title}</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-12">
+            <div className="flex items-center gap-3">
+              <img src={post.author.avatar} alt={post.author.name} className="h-11 w-11 rounded-full border border-gray-200 dark:border-gray-800" />
               <div>
-                <div className="font-medium text-gray-900 dark:text-gray-50">
-                  {post.author.name}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {post.author.title}
-                </div>
+                <div className="font-semibold text-lg text-gray-900 dark:text-gray-50">{post.author.name}</div>
+                <div className="text-gray-400 dark:text-gray-500 text-sm">{format(parseISO(post.publishedAt), 'MMMM d, yyyy')}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <time dateTime={post.publishedAt}>
-                {format(parseISO(post.publishedAt), 'MMMM d, yyyy')}
-              </time>
-              <span className="mx-2">•</span>
-              <span>{post.readingTime}</span>
+            <div className="flex-1" />
+            {/* Share Buttons */}
+            <div className="relative">
+              <button onClick={() => setShowShareMenu(!showShareMenu)} aria-label="Share this post" className="p-2 rounded-full hover:bg-primary/10 text-primary border border-primary/20">
+                <Share2 className="h-5 w-5" />
+              </button>
+              {showShareMenu && (
+                <div className="absolute mt-2 right-0 bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 flex gap-3 z-50">
+                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${window.location.href}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter">
+                    <Twitter className="h-5 w-5 text-blue-500" />
+                  </a>
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
+                    <Facebook className="h-5 w-5 text-blue-700" />
+                  </a>
+                  <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${window.location.href}&title=${encodeURIComponent(post.title)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn">
+                    <Linkedin className="h-5 w-5 text-blue-600" />
+                  </a>
+                  <button onClick={() => {navigator.clipboard.writeText(window.location.href); setShowShareMenu(false);}} aria-label="Copy link">
+                    <Copy className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="aspect-[2/1] overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+          {/* Featured Image */}
+          <div className="rounded-3xl overflow-hidden mb-14 shadow-xl bg-gradient-to-tr from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20">
             <LazyLoadImage
-              alt={post.title}
               src={post.featuredImage}
+              alt={post.title}
+              className="w-full h-auto object-cover"
               effect="blur"
-              className="w-full h-full object-cover"
             />
           </div>
-        </header>
 
-        <div className="prose prose-lg dark:prose-invert max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={components}
-          >
-            {post.content}
-          </ReactMarkdown>
-        </div>
+          {/* Content */}
+          <article className="prose prose-lg dark:prose-invert max-w-none">
+            <ReactMarkdown
+              components={components}
+              remarkPlugins={[remarkGfm]}
+            >
+              {post.content}
+            </ReactMarkdown>
+          </article>
 
-        <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
-          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Tags
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map(tag => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary"
-              >
-                {tag}
-              </span>
-            ))}
+          {/* Tags */}
+          <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
+            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+              Tags
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </article>
+      </main>
 
       {/* Share Button */}
       <div className="fixed bottom-8 right-8">

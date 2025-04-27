@@ -18,9 +18,31 @@ export function SupportPage() {
         <meta name="description" content="Get help with PoshAuto. Find tutorials, documentation, and answers to frequently asked questions." />
       </Helmet>
 
-      <main className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-8">Support Center</h1>
+          <h1 className="text-5xl font-extrabold text-gray-900 dark:text-gray-50 mb-10 text-center">Support Center</h1>
+
+          {/* Testimonial/Contact Block */}
+          <section className="mb-16">
+            <div className="flex flex-col md:flex-row items-center justify-between bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-2xl shadow-md p-8 md:p-12 mb-10">
+              <div className="flex-1 mb-6 md:mb-0">
+                <blockquote className="text-xl font-semibold italic text-gray-700 dark:text-gray-200 mb-3">“The PoshAuto support team is always there for me—fast, friendly, and super helpful!”</blockquote>
+                <div className="flex items-center gap-3">
+                  <img src="/avatars/support-customer.jpg" alt="Customer" className="h-10 w-10 rounded-full border border-gray-200 dark:border-gray-800" />
+                  <span className="font-medium text-gray-900 dark:text-gray-50">Jessica M.</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Top Seller</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center md:items-end">
+                <a href="mailto:support@poshproject.com" className="mb-3">
+                  <Button size="lg" className="bg-primary text-white font-bold px-8 py-3 shadow-md hover:bg-primary/90 transition-colors">Email Support</Button>
+                </a>
+                <a href="/help" className="">
+                  <Button size="lg" variant="outline" className="px-8 py-3 border-2 border-primary text-primary hover:bg-primary/10 transition-colors">Help Center</Button>
+                </a>
+              </div>
+            </div>
+          </section>
 
           {/* Search Section */}
           <div className="mb-12">
@@ -38,22 +60,22 @@ export function SupportPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 mb-6">Quick Links</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="justify-start h-auto py-4">
+              <Button variant="outline" className="justify-start h-auto py-6 rounded-xl shadow-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-primary hover:bg-primary/10 transition-colors">
                 <div className="text-left">
-                  <div className="font-medium">Getting Started</div>
-                  <div className="text-sm text-gray-500">New to PoshAuto? Start here</div>
+                  <div className="font-bold text-lg text-primary mb-1">Getting Started</div>
+                  <div className="text-base text-gray-500 dark:text-gray-400">New to PoshAuto? Start here</div>
                 </div>
               </Button>
-              <Button variant="outline" className="justify-start h-auto py-4">
+              <Button variant="outline" className="justify-start h-auto py-6 rounded-xl shadow-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-primary hover:bg-primary/10 transition-colors">
                 <div className="text-left">
-                  <div className="font-medium">Account Settings</div>
-                  <div className="text-sm text-gray-500">Manage your account</div>
+                  <div className="font-bold text-lg text-primary mb-1">Account Settings</div>
+                  <div className="text-base text-gray-500 dark:text-gray-400">Manage your account</div>
                 </div>
               </Button>
-              <Button variant="outline" className="justify-start h-auto py-4">
+              <Button variant="outline" className="justify-start h-auto py-6 rounded-xl shadow-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-primary hover:bg-primary/10 transition-colors">
                 <div className="text-left">
-                  <div className="font-medium">Billing</div>
-                  <div className="text-sm text-gray-500">Subscription and payments</div>
+                  <div className="font-bold text-lg text-primary mb-1">Billing</div>
+                  <div className="text-base text-gray-500 dark:text-gray-400">Subscription and payments</div>
                 </div>
               </Button>
             </div>

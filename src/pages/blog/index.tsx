@@ -53,24 +53,24 @@ export function BlogPage() {
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
-      <main className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section */}
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-extrabold text-gray-900 dark:text-gray-50 mb-4">
+          <div className="text-center mb-20">
+            <h1 className="text-5xl font-extrabold text-gray-900 dark:text-gray-50 mb-5">
               PoshAuto Blog
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-2xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto font-medium">
               Insights and strategies for Poshmark sellers looking to scale their business
             </p>
           </div>
 
           {/* Featured Post */}
-          <section className="mb-20">
+          <section className="mb-24">
             <h2 className="sr-only">Featured Article</h2>
             <Link
               to={`/blog/${featuredPost.slug}`}
-              className="group relative block bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              className="group relative block bg-gradient-to-tr from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-3xl overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
               <div className="aspect-[21/9] overflow-hidden">
                 <LazyLoadImage

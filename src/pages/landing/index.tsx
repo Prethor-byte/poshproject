@@ -52,45 +52,56 @@ export function LandingPage() {
       </Helmet>
 
       <PublicLayout>
-        <main id="main-content" role="main">
+        <main id="main-content" role="main" className="pb-24">
           {/* Hero Section */}
           <section className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 mt-16" aria-labelledby="hero-heading">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
               <div className="flex flex-col justify-center space-y-8">
-                <h1 id="hero-heading" className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl">
-                  Automate Your <span className="text-primary">Poshmark</span> Business
+                <h1 id="hero-heading" className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl leading-tight">
+                  The #1 Automation Platform for <span className="text-primary">Poshmark Sellers</span>
                 </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-400">
-                  Boost your sales and save countless hours with our intelligent automation platform designed specifically for Poshmark resellers.
+                <p className="text-2xl text-gray-700 dark:text-gray-300 font-medium max-w-xl">
+                  Save hours, boost your sales, and grow your business with AI-powered automation trusted by top Poshmark sellers.
                 </p>
                 <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                   <Link to="/register">
                     <Button
                       size="lg"
-                      className="group w-full sm:w-auto"
+                      className="group w-full sm:w-auto shadow-lg text-lg px-8 py-4"
                       aria-label="Start your free trial"
                     >
                       Start Free Trial
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </Link>
                   <Button
                     size="lg"
                     variant="outline"
+                    className="text-lg px-8 py-4 border-2 border-primary"
                     onClick={handleDemoVideoClick}
                     aria-label="Watch product demo video"
                   >
-                    Watch Demo
+                    <span className="flex items-center"><svg className="mr-2 h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-5.197-3.027A1 1 0 008 9.027v5.946a1 1 0 001.555.832l5.197-3.027a1 1 0 000-1.664z" /></svg>Watch Demo</span>
                   </Button>
                 </div>
-                <div className="flex items-center space-x-8 text-sm text-gray-600 dark:text-gray-400" aria-label="Trial information">
-                  <div className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4 text-primary" aria-hidden="true" />
+                <div className="flex flex-wrap items-center space-x-6 text-base text-gray-600 dark:text-gray-400 mt-2" aria-label="Trial information">
+                  <div className="flex items-center mb-2">
+                    <Clock className="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                     <span>14-day free trial</span>
                   </div>
-                  <div className="flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4 text-primary" aria-hidden="true" />
+                  <div className="flex items-center mb-2">
+                    <DollarSign className="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
                     <span>No credit card required</span>
+                  </div>
+                </div>
+                {/* Logo Cloud */}
+                <div className="mt-8">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Trusted by sellers from:</p>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <img src="/logos/brand1.svg" alt="Brand 1" className="h-8 grayscale opacity-80" />
+                    <img src="/logos/brand2.svg" alt="Brand 2" className="h-8 grayscale opacity-80" />
+                    <img src="/logos/brand3.svg" alt="Brand 3" className="h-8 grayscale opacity-80" />
+                    <img src="/logos/brand4.svg" alt="Brand 4" className="h-8 grayscale opacity-80" />
                   </div>
                 </div>
               </div>
@@ -108,23 +119,33 @@ export function LandingPage() {
               </div>
             </div>
           </section>
-
           {/* Features Section */}
-          <section className="container mx-auto px-4 py-16 sm:px-6 lg:px-8" aria-labelledby="features-heading">
-            <h2 id="features-heading" className="text-3xl font-bold text-gray-900 dark:text-gray-50 text-center mb-12">
-              Powerful Features for Poshmark Sellers
-            </h2>
+          <section className="container mx-auto px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="features-heading">
+            <div className="max-w-2xl mx-auto text-center mb-12">
+              <h2 id="features-heading" className="text-4xl font-extrabold text-gray-900 dark:text-gray-50 mb-4">
+                Everything You Need to Win on Poshmark
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Our automation suite is built to help you grow, save time, and maximize your sales—no matter your experience level.
+              </p>
+            </div>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="flex flex-col items-start p-6 bg-gray-50 dark:bg-gray-900 rounded-lg"
+                  className="group flex flex-col items-start p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800 transition-transform hover:-translate-y-2 hover:shadow-xl focus-within:ring-2 focus-within:ring-primary outline-none cursor-pointer"
+                  tabIndex={0}
+                  aria-label={feature.title}
                 >
-                  <div className="rounded-lg bg-primary/10 p-3 mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                  <div className="flex items-center justify-center rounded-full bg-primary/10 p-4 mb-6">
+                    <feature.icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-base">
+                    {feature.description}
+                  </p>
                 </div>
               ))}
             </div>
