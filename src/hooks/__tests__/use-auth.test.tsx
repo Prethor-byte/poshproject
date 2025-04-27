@@ -9,7 +9,7 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 jest.mock('@supabase/supabase-js', () => ({ AuthError: class {}, Session: class {}, User: class {} }));
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useAuth } from '../use-auth';
 
 // This is a minimal smoke test for the hook. Full mocking of supabase is recommended for more thorough tests.

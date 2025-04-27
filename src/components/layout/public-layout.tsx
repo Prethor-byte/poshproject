@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Footer } from "@/components/layout/footer";
-import { Navbar } from "./navbar";
+import { Navbar } from "@/components/layout/navbar";
 import { CookieBanner } from "@/components/compliance/cookie-banner";
 import { PageTransition } from "@/components/layout/page-transition";
 
