@@ -8,15 +8,21 @@ interface PublicLayoutProps {
   children: ReactNode;
 }
 
+import { ThemeProvider } from '@/components/theme-provider';
+import { ScrollHandler } from './scroll-to-top';
+
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-      <Navbar />
-      <CookieBanner />
-      <div className="flex-1 flex flex-col">
-        <PageTransition>{children}</PageTransition>
+    <ThemeProvider defaultTheme="system" storageKey="posh-theme">
+      <ScrollHandler />
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+        <Navbar />
+        <CookieBanner />
+        <div className="flex-1 flex flex-col">
+          <PageTransition>{children}</PageTransition>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </ThemeProvider>
   );
 }

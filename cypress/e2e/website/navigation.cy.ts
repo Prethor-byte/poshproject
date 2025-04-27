@@ -3,9 +3,10 @@
 
 describe('Website Navigation', () => {
   const navLinks = [
-    { label: /pricing/i, path: '/pricing' },
-    { label: /blog/i, path: '/blog' },
-    { label: /privacy|terms|legal/i, path: /privacy|terms|legal/ },
+    { label: /privacy policy/i, path: '/legal/privacy' },
+    { label: /start free trial/i, path: '/register' },
+    { label: /get started/i, path: '/register' },
+    { label: /poshauto logo/i, path: '/' },
   ];
 
   beforeEach(() => {
@@ -14,13 +15,13 @@ describe('Website Navigation', () => {
 
   navLinks.forEach(link => {
     it(`navigates to ${link.label} page`, () => {
-      cy.findAllByRole('link').filter(`:contains(${link.label.source})`).first().click({ force: true });
+      cy.contains('a', link.label.source.replace(/\//g, '').replace(/\^|\$/g, '').replace(/\|.*/g, '')).click({ force: true });
       if (typeof link.path === 'string') {
         cy.url().should('include', link.path);
       } else {
         cy.url().should('match', link.path);
       }
-      cy.findByRole('heading').should('exist');
+      cy.get('h1, h2, h3').should('exist');
     });
   });
 });

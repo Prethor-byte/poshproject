@@ -6,17 +6,16 @@
 
 describe('Website Homepage', () => {
   it('loads successfully and displays main CTA', () => {
-    cy.visit('/');
-    // Check for main headline/CTA
-    cy.findByRole('heading', { name: /poshauto|automation|grow/i }).should('exist');
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        cy.spy(win.console, 'error').as('consoleError');
+      }
+    });
+    // Check for main headline/CTA (update regex if needed)
+    cy.contains('h1, h2, h3', /automation platform.*poshmark/i).should('exist');
     // Check for visible main call-to-action button
-    cy.findAllByRole('link').then(links => {
-      const cta = [...links].filter(el => /get started|sign up|start free/i.test(el.textContent || ''));
-      expect(cta.length).to.be.greaterThan(0);
-    });
+    cy.contains('a', /Get Started|Start Free Trial/).should('exist');
     // Ensure no uncaught errors
-    cy.window().then(win => {
-      cy.wrap(win.console.error).should('not.be.called');
-    });
+    cy.get('@consoleError').should('not.be.called');
   });
 });

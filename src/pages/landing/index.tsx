@@ -58,10 +58,13 @@ export function LandingPage() {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
               <div className="flex flex-col justify-center space-y-8">
                 <h1 id="hero-heading" className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl leading-tight">
-                  The #1 Automation Platform for <span className="text-primary">Poshmark Sellers</span>
+                  Automation Platform for Poshmark
                 </h1>
+                <h2 className="sr-only">
+                  Automation platform for Poshmark sellers
+                </h2>
                 <p className="text-2xl text-gray-700 dark:text-gray-300 font-medium max-w-xl">
-                  Save hours, boost your sales, and grow your business with AI-powered automation trusted by top Poshmark sellers.
+                  Save hours and automate your Poshmark business with AI-powered tools.
                 </p>
                 <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                   <Link to="/register">
@@ -97,12 +100,7 @@ export function LandingPage() {
                 {/* Logo Cloud */}
                 <div className="mt-8">
                   <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Trusted by sellers from:</p>
-                  <div className="flex flex-wrap items-center gap-6">
-                    <img src="/logos/brand1.svg" alt="Brand 1" className="h-8 grayscale opacity-80" />
-                    <img src="/logos/brand2.svg" alt="Brand 2" className="h-8 grayscale opacity-80" />
-                    <img src="/logos/brand3.svg" alt="Brand 3" className="h-8 grayscale opacity-80" />
-                    <img src="/logos/brand4.svg" alt="Brand 4" className="h-8 grayscale opacity-80" />
-                  </div>
+                  
                 </div>
               </div>
               <div className="relative hidden lg:block" aria-hidden="true">
@@ -287,7 +285,13 @@ export function LandingPage() {
   );
 }
 
-const features = [
+export type FeatureItem = {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+export const features: FeatureItem[] = [
   {
     title: "Automated Sharing",
     description: "Schedule automatic sharing of your listings at optimal times for maximum exposure.",
@@ -314,7 +318,7 @@ const pricingPlans = [
   {
     name: "Starter",
     price: "29",
-    description: "Perfect for new Poshmark sellers",
+    description: "Perfect for getting started with Poshmark automation.",
     features: [
       "1 Poshmark Account",
       "Automated Sharing",
@@ -326,7 +330,7 @@ const pricingPlans = [
   {
     name: "Professional",
     price: "49",
-    description: "For growing Poshmark businesses",
+    description: "For advanced automation needs.",
     features: [
       "3 Poshmark Accounts",
       "Advanced Automation",
@@ -339,7 +343,7 @@ const pricingPlans = [
   {
     name: "Enterprise",
     price: "99",
-    description: "For power sellers and boutiques",
+    description: "For teams and power users.",
     features: [
       "Unlimited Accounts",
       "Custom Automation Rules",
@@ -352,20 +356,4 @@ const pricingPlans = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Full-time Poshmark Seller",
-    content: "This platform has completely transformed my Poshmark business. I've doubled my sales while spending half the time on manual tasks.",
-  },
-  {
-    name: "Michael Chen",
-    role: "Boutique Owner",
-    content: "The multi-account management feature is a game-changer. I can now manage all my boutique accounts from one place.",
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Side Hustle Seller",
-    content: "Even as a part-time seller, this tool has made it possible for me to compete with full-time sellers. The automation is incredible!",
-  },
-];
+const testimonials: { name: string; role: string; content: string }[] = [];

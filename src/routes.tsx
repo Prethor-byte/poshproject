@@ -14,11 +14,26 @@ import { SupportPage } from '@/pages/support';
 import { DashboardPage } from '@/pages/app/dashboard';
 import { SettingsPage } from '@/pages/app/settings';
 import { ProfilePage } from '@/pages/app/profile';
+import FeaturesPage from '@/pages/features';
+import TermsPage from '@/pages/legal/terms';
+import PrivacyPage from '@/pages/legal/privacy';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <LandingPage />,
+  },
+  {
+    path: '/features',
+    element: <FeaturesPage />,
+  },
+  {
+    path: '/legal/terms',
+    element: <TermsPage />,
+  },
+  {
+    path: '/legal/privacy',
+    element: <PrivacyPage />,
   },
   {
     path: '/support',
