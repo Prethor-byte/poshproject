@@ -1,0 +1,7 @@
+# Ignore build output and compiled files
+server/dist/
+coverage/
+node_modules/
+.env
+.DS_Store
+*.log
