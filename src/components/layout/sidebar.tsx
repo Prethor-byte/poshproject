@@ -15,10 +15,12 @@ import { useAuth } from '@/hooks/use-auth';
 
 const navigation = [
   { name: 'Dashboard', href: '/app', icon: HomeIcon },
-  { name: 'Share', href: '/app/share', icon: ShareIcon },
+  { name: 'Automation', href: '/app/automation', icon: ShareIcon },
+  { name: 'Logs', href: '/app/logs', icon: CogIcon },
   { name: 'Accounts', href: '/app/accounts', icon: KeyIcon },
   { name: 'Profile', href: '/app/profile', icon: UserIcon },
   { name: 'Settings', href: '/app/settings', icon: CogIcon },
+  { name: 'Support', href: '/app/support', icon: ArrowRightOnRectangleIcon },
 ];
 
 interface SidebarProps {

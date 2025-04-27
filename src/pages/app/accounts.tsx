@@ -1,27 +1,16 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { usePoshmark } from '@/hooks/use-poshmark';
-import { Alert, AlertTitle } from '@/components/ui/alert';
-import { XCircle } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState } from 'react';
-import type { PoshmarkRegion } from '@/types/poshmark';
+import { usePoshmark } from '@/hooks/use-poshmark';
+import { Box, Group, Title, Card, Button, Modal, Select, Badge, Skeleton, Stack, Alert, Text } from '@mantine/core';
+import { formatDistanceToNow } from 'date-fns';
+
+const InfoIcon = () => <span role="img" aria-label="info">ℹ️</span>;
+
+const regionOptions = [
+  { value: 'US', label: 'United States (poshmark.com)' },
+  { value: 'CA', label: 'Canada (poshmark.ca)' },
+];
+
+type PoshmarkRegion = 'US' | 'CA';
 
 export function AccountsPage() {
   const { sessions, loading, error, clearError, importSession, verifySession, removeSession } = usePoshmark();
@@ -57,125 +46,130 @@ export function AccountsPage() {
     }
   };
 
-import { Box, Group, Title } from '@mantine/core';
-
-export function AccountsPage() {
-  // ...rest of component logic
   return (
-    <Box px={{ base: 0, sm: 24 }} py={{ base: 16, sm: 32 }}>
-      <Group justify="space-between" style={{ marginBottom: 24 }}>
-        <Title order={1}>Poshmark Accounts</Title>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Connect Account</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Connect Poshmark Account</DialogTitle>
-              <DialogDescription>
-                Choose your Poshmark region and connect your account.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Select
-                value={selectedRegion}
-                onValueChange={(value) => setSelectedRegion(value as PoshmarkRegion)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select region" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US">United States (poshmark.com)</SelectItem>
-                  <SelectItem value="CA">Canada (poshmark.ca)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
-                Cancel
-              </Button>
-              <Button onClick={handleConnect} disabled={loading} className="w-full sm:w-auto">
-                {loading ? 'Connecting...' : 'Connect'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </Group>
-      {/* Error Alert */}
+    <Box p={24}>
+      <Alert icon={<InfoIcon />} color="grape" mb="md" title="Onboarding" variant="filled">
+        Connect your Poshmark account to start automating your closet.
+      </Alert>
+
       {error && (
-        <Alert variant="destructive" className="mb-2 sm:mb-4">
-          <XCircle className="h-4 w-4" />
-          <AlertTitle>{error.message}</AlertTitle>
+        <Alert color="red" mb="md" title={error.message} variant="filled">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={clearError}
-            className="mt-2 w-full sm:w-auto"
           >
             Dismiss
           </Button>
         </Alert>
       )}
 
-      {/* Sessions List */}
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sessions.map((session) => (
-          <Card key={session.id} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-              <div className="w-full sm:w-auto">
-                <h3 className="font-semibold">{session.username}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Connected {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Region: {session.region === 'US' ? 'United States' : 'Canada'}
-                </p>
-              </div>
-              <div className={`px-2 py-1 rounded-full text-xs w-full sm:w-auto text-center ${
-                session.is_active 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-              }`}>
-                {session.is_active ? 'Active' : 'Inactive'}
-              </div>
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              Last verified: {formatDistanceToNow(new Date(session.last_verified), { addSuffix: true })}
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleVerify(session.id)}
-                disabled={loading}
-                className="w-full sm:w-auto"
-              >
-                Verify
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleRemove(session.id)}
-                disabled={loading}
-                className="w-full sm:w-auto"
-              >
-                Remove
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <Group justify="space-between" mb="md">
+        <Title order={1}>Poshmark Accounts</Title>
+        <Modal 
+          opened={isDialogOpen} 
+          onClose={() => setIsDialogOpen(false)} 
+          title="Connect Poshmark Account"
+        >
+          <Select
+            value={selectedRegion}
+            onChange={(value) => setSelectedRegion(value as PoshmarkRegion)}
+            data={regionOptions}
+            label="Select region"
+            placeholder="Select region"
+            mb="md"
+          />
+          <Group justify="flex-end" mt="md">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConnect} 
+              loading={loading}
+            >
+              {loading ? 'Connecting...' : 'Connect'}
+            </Button>
+          </Group>
+        </Modal>
+        <Button onClick={() => setIsDialogOpen(true)}>Connect Account</Button>
+      </Group>
 
-      {/* Empty State */}
+      {loading ? (
+        <Stack gap="md">
+          {[1, 2, 3].map((_, index) => (
+            <Card key={index} p="xl">
+              <Skeleton height={40} mb="md" />
+              <Skeleton height={20} mb="md" />
+              <Skeleton height={20} mb="md" />
+              <Group align="apart">
+                <Button variant="outline" size="sm" loading>
+                  Verify
+                </Button>
+                <Button variant="filled" color="red" size="sm" loading>
+                  Remove
+                </Button>
+              </Group>
+            </Card>
+          ))}
+        </Stack>
+      ) : (
+        <Stack gap="md">
+          {sessions.map((session) => (
+            <Card key={session.id} p="xl">
+              <Group align="apart">
+                <Text fw={500}>{session.username}</Text>
+                <Badge 
+                  color={session.is_active ? 'green' : 'red'} 
+                  variant="filled"
+                >
+                  {session.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </Group>
+              <Text mb="md">
+                Connected {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
+              </Text>
+              <Text mb="md">
+                Region: {session.region === 'US' ? 'United States' : 'Canada'}
+              </Text>
+              <Text mb="md">
+                Last verified: {formatDistanceToNow(new Date(session.last_verified), { addSuffix: true })}
+              </Text>
+              <Group align="apart">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleVerify(session.id)}
+                  loading={loading}
+                >
+                  Verify
+                </Button>
+                <Button 
+                  variant="filled" 
+                  color="red" 
+                  size="sm" 
+                  onClick={() => handleRemove(session.id)}
+                  loading={loading}
+                >
+                  Remove
+                </Button>
+              </Group>
+            </Card>
+          ))}
+        </Stack>
+      )}
+
       {!loading && sessions.length === 0 && (
-        <Card className="p-4 sm:p-8 text-center">
-          <h3 className="text-lg font-semibold mb-2">No Accounts Connected</h3>
-          <p className="text-gray-600 mb-4">
+        <Card p="xl" ta="center">
+          <Text fw={500} mb="md">
+            No Accounts Connected
+          </Text>
+          <Text mb="md">
             Connect your Poshmark account to start automating your closet.
-          </p>
-          <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">Connect Account</Button>
+          </Text>
+          <Button onClick={() => setIsDialogOpen(true)}>Connect Account</Button>
         </Card>
       )}
     </Box>

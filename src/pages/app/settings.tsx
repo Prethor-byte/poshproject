@@ -1,32 +1,43 @@
 
-import { Title, Text, Tabs, Group, Box } from '@mantine/core';
+import { useState } from 'react';
+import { Container, Stack, Card, Title, Text, Tabs, Group, Alert, Skeleton } from '@mantine/core';
 
 export function SettingsPage() {
+  const [loading, setLoading] = useState(false); // Set true to show skeletons
   return (
-    <Box>
-      <Group wrap="nowrap" style={{ flexDirection: 'column', rowGap: 4, marginBottom: 24 }}>
-        <Title order={2}>Settings</Title>
-        <Text c="dimmed">Manage your account settings and preferences</Text>
-      </Group>
-      <Tabs defaultValue="account" variant="outline" radius="md">
-        <Tabs.List style={{ marginBottom: 16 }}>
-          <Tabs.Tab value="account">Account</Tabs.Tab>
-          <Tabs.Tab value="automation">Automation</Tabs.Tab>
-          <Tabs.Tab value="notifications">Notifications</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="account">
-          <Title order={4} style={{ marginBottom: 8 }}>Account Settings</Title>
-          {/* Add account settings form here */}
-        </Tabs.Panel>
-        <Tabs.Panel value="automation">
-          <Title order={4} style={{ marginBottom: 8 }}>Automation Preferences</Title>
-          {/* Add automation settings form here */}
-        </Tabs.Panel>
-        <Tabs.Panel value="notifications">
-          <Title order={4} style={{ marginBottom: 8 }}>Notifications</Title>
-          {/* Add notification settings here */}
-        </Tabs.Panel>
-      </Tabs>
-    </Box>
+    <Container size="md" py="xl">
+      <Stack gap="md">
+        <Alert color="grape" mb="md" title="Settings Onboarding" variant="filled">
+          Manage your account, automation, and notification preferences here. Changes are saved automatically.
+        </Alert>
+        <Title order={2} mb="xs">Settings</Title>
+        <Text color="dimmed" mb="md">Manage your account settings and preferences</Text>
+        <Tabs defaultValue="account" variant="outline" radius="md">
+          <Tabs.List mb="md">
+            <Tabs.Tab value="account">Account</Tabs.Tab>
+            <Tabs.Tab value="automation">Automation</Tabs.Tab>
+            <Tabs.Tab value="notifications">Notifications</Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel value="account">
+            <Card withBorder p="xl" mb="md">
+              <Title order={4} mb="xs">Account Settings</Title>
+              {loading ? <Skeleton height={40} width="60%" /> : <Text color="dimmed">Add account settings form here.</Text>}
+            </Card>
+          </Tabs.Panel>
+          <Tabs.Panel value="automation">
+            <Card withBorder p="xl" mb="md">
+              <Title order={4} mb="xs">Automation Preferences</Title>
+              {loading ? <Skeleton height={40} width="60%" /> : <Text color="dimmed">Add automation settings form here.</Text>}
+            </Card>
+          </Tabs.Panel>
+          <Tabs.Panel value="notifications">
+            <Card withBorder p="xl" mb="md">
+              <Title order={4} mb="xs">Notifications</Title>
+              {loading ? <Skeleton height={40} width="60%" /> : <Text color="dimmed">Add notification settings here.</Text>}
+            </Card>
+          </Tabs.Panel>
+        </Tabs>
+      </Stack>
+    </Container>
   );
 }
