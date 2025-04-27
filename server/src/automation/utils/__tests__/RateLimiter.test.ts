@@ -21,7 +21,7 @@ describe('RateLimiter', () => {
   let now = Date.now();
   beforeEach(() => {
     // Professional test isolation: always reset singleton and config
-    (RateLimiter as any).instance = undefined;
+    RateLimiter._resetInstanceForTests?.();
     limiter = RateLimiter.getInstance({ ...defaultConfig });
     limiter._reset();
     now = Date.now();

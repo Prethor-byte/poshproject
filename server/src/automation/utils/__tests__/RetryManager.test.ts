@@ -2,6 +2,17 @@ import { RetryManager } from '../RetryManager';
 import { AutomationError, ErrorType } from '../errors';
 
 describe('RetryManager', () => {
+  beforeEach(() => {
+    const { RateLimiter } = require('../../utils/RateLimiter');
+    RateLimiter._resetInstanceForTests?.();
+    RateLimiter.getInstance({
+      maxRequestsPerMinute: 30,
+      maxRequestsPerHour: 300,
+      maxConcurrentRequests: 5,
+      cooldownPeriod: 2000
+    })._reset();
+    jest.clearAllMocks();
+  });
   afterAll(() => {
     const manager = require('../../utils/BrowserManager').BrowserManager.getInstance();
     manager.stopMonitoring();

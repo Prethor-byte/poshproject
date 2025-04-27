@@ -108,12 +108,16 @@ export class ShareAutomation {
   }
 
   async shareCloset(): Promise<number> {
+    console.log('[DEBUG] shareCloset: start');
     if (!this.isLoggedIn || !this.page) {
+      console.log('[DEBUG] shareCloset: Not logged in');
       throw new AutomationError('Not logged in', ErrorType.AUTH_FAILED);
     }
 
     // Check session health before proceeding
+    console.log('[DEBUG] shareCloset: checking session health');
     if (!await this.checkSessionHealth()) {
+      console.log('[DEBUG] shareCloset: Unhealthy session, recovering');
       logger.warn('Unhealthy session detected, attempting recovery', { userId: this.config.userId });
       await this.cleanup();
       await this.initialize();
@@ -122,41 +126,57 @@ export class ShareAutomation {
     let sharedCount = 0;
     try {
       // Navigate to closet
+      console.log('[DEBUG] shareCloset: navigating to closet');
       await this.page.goto(`https://poshmark.com/closet/${this.config.username}`);
+      console.log('[DEBUG] shareCloset: waiting for closet-items selector');
       await this.page.waitForSelector('[data-testid="closet-items"]');
 
       // Get all items
       const items = await this.page.$$('[data-testid="closet-item"]');
-      const itemsToShare = items.slice(0, this.config.maxItems);
+      console.log('[DEBUG] shareCloset: found', items.length, 'items');
+      if (!items.length) {
+        logger.info('No items found in closet', { userId: this.config.userId });
+        console.log('[DEBUG] shareCloset: no items found, returning 0');
+        return 0;
+      }
 
-      for (const item of itemsToShare) {
+      const maxToShare = Math.min(items.length, this.config.maxItems);
+      console.log('[DEBUG] shareCloset: maxToShare', maxToShare);
+      for (let i = 0; i < maxToShare; i++) {
+        const item = items[i];
         try {
-          // Find and click the share button
-          const shareButton = await item.$('[data-testid="share-button"]');
-          if (shareButton) {
-            await shareButton.click();
-            sharedCount++;
-            await this.randomDelay(
-              this.config.delayBetweenShares[0],
-              this.config.delayBetweenShares[1]
-            );
-          }
+          console.log(`[DEBUG] shareCloset: sharing item ${i + 1}`);
+          const shareBtn = await item.$('[data-testid="share-button"]');
+          if (!shareBtn) throw new Error('Share button not found');
+          await shareBtn.click();
+          sharedCount++;
+          console.log(`[DEBUG] shareCloset: shared item ${i + 1}, count=${sharedCount}`);
+          await this.randomDelay(
+            this.config.delayBetweenShares[0],
+            this.config.delayBetweenShares[1]
+          );
+          console.log(`[DEBUG] shareCloset: delay complete for item ${i + 1}`);
         } catch (error) {
           logger.warn(`Failed to share item ${sharedCount + 1}`, { 
             error,
             userId: this.config.userId 
           });
+          console.log(`[DEBUG] shareCloset: error sharing item ${i + 1}`, error);
           continue;
         }
       }
 
+      console.log('[DEBUG] shareCloset: completed sharing loop, sharedCount', sharedCount);
       return sharedCount;
     } catch (error) {
       logger.error('Share automation failed', { error, userId: this.config.userId });
+      console.log('[DEBUG] shareCloset: caught error in main try/catch', error);
       throw new AutomationError(
         'Share automation failed',
         error instanceof AutomationError ? error.type : ErrorType.UNKNOWN
       );
+    } finally {
+      console.log('[DEBUG] shareCloset: end');
     }
   }
 

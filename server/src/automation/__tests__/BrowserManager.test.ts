@@ -5,6 +5,9 @@ import { Browser, BrowserContext, Page } from 'playwright';
 import { AutomationError, ErrorType } from '../utils/errors';
 import { OperationMetrics } from '../utils/types';
 
+// Declare mockBrowser for test cleanup
+let mockBrowser: any;
+
 jest.mock('playwright', () => ({
   chromium: {
     launch: jest.fn()
@@ -20,20 +23,39 @@ jest.mock('../utils/logger', () => ({
 }));
 
 
-afterEach(() => {
+afterEach(async () => {
+  // If you create a mockBrowser in a test, close it here if needed
+  if (typeof mockBrowser !== 'undefined' && mockBrowser && typeof mockBrowser.close === 'function') {
+    try { await mockBrowser.close(); } catch (e) {}
+  }
+  jest.clearAllMocks();
   // Reset the singleton for test isolation
   // @ts-ignore
   BrowserManager['instance'] = undefined;
+  // Reset RateLimiter singleton for isolation
+  const { RateLimiter } = require('../utils/RateLimiter');
+  RateLimiter.getInstance()._reset();
 });
 
-beforeAll(() => {
+afterAll(() => {
+  // Ensure all singletons are reset after all tests
+  // @ts-ignore
+  BrowserManager['instance'] = undefined;
   const { RateLimiter } = require('../utils/RateLimiter');
+  RateLimiter.getInstance()._reset();
+});
+
+beforeEach(() => {
+  const { RateLimiter } = require('../utils/RateLimiter');
+  // Always reset singleton and initialize with config for every test
+  RateLimiter._resetInstanceForTests?.();
   RateLimiter.getInstance({
     maxRequestsPerMinute: 30,
     maxRequestsPerHour: 300,
     maxConcurrentRequests: 5,
     cooldownPeriod: 2000
   })._reset();
+  jest.clearAllMocks();
 });
 
 describe('BrowserManager', () => {

@@ -1,5 +1,17 @@
 import { AutomationError, ErrorType } from '../errors';
 
+beforeEach(() => {
+  const { RateLimiter } = require('../RateLimiter');
+  RateLimiter._resetInstanceForTests?.();
+  RateLimiter.getInstance({
+    maxRequestsPerMinute: 30,
+    maxRequestsPerHour: 300,
+    maxConcurrentRequests: 5,
+    cooldownPeriod: 2000
+  })._reset();
+  jest.clearAllMocks();
+});
+
 describe('AutomationError', () => {
   it('should create an error with default recoverable value', () => {
     const error = new AutomationError('Test error', ErrorType.UNKNOWN);

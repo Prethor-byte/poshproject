@@ -1,5 +1,17 @@
 import { delay, randomDelay } from '../timing';
 
+beforeEach(() => {
+  const { RateLimiter } = require('../RateLimiter');
+  RateLimiter._resetInstanceForTests?.();
+  RateLimiter.getInstance({
+    maxRequestsPerMinute: 30,
+    maxRequestsPerHour: 300,
+    maxConcurrentRequests: 5,
+    cooldownPeriod: 2000
+  })._reset();
+  jest.clearAllMocks();
+});
+
 describe('Timing Utilities', () => {
   beforeEach(() => {
     jest.useFakeTimers();
