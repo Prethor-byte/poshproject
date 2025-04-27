@@ -1,8 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LazyLoadImage } from 'react-lazy-load-image-component';
-import { ArrowRight, Bot, Clock, DollarSign, Zap } from "lucide-react";
+
+import { Bot, Clock, DollarSign, Zap } from "lucide-react";
 import { useState, useRef } from "react";
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import { trackEvent } from "@/lib/analytics";
@@ -54,69 +54,106 @@ export function LandingPage() {
       <PublicLayout>
         <main id="main-content" role="main" className="pb-24">
           {/* Hero Section */}
-          <section className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 mt-16" aria-labelledby="hero-heading">
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
-              <div className="flex flex-col justify-center space-y-8">
-                <h1 id="hero-heading" className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50 sm:text-6xl leading-tight">
-                  Automation Platform for Poshmark
-                </h1>
-                <h2 className="sr-only">
-                  Automation platform for Poshmark sellers
-                </h2>
-                <p className="text-2xl text-gray-700 dark:text-gray-300 font-medium max-w-xl">
-                  Save hours and automate your Poshmark business with AI-powered tools.
-                </p>
-                <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-                  <Link to="/register">
-                    <Button
-                      size="lg"
-                      className="group w-full sm:w-auto shadow-lg text-lg px-8 py-4"
-                      aria-label="Start your free trial"
-                    >
-                      Start Free Trial
-                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="text-lg px-8 py-4 border-2 border-primary"
-                    onClick={handleDemoVideoClick}
-                    aria-label="Watch product demo video"
-                  >
-                    <span className="flex items-center"><svg className="mr-2 h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-5.197-3.027A1 1 0 008 9.027v5.946a1 1 0 001.555.832l5.197-3.027a1 1 0 000-1.664z" /></svg>Watch Demo</span>
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center space-x-6 text-base text-gray-600 dark:text-gray-400 mt-2" aria-label="Trial information">
-                  <div className="flex items-center mb-2">
-                    <Clock className="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                    <span>14-day free trial</span>
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <DollarSign className="mr-2 h-5 w-5 text-primary" aria-hidden="true" />
-                    <span>No credit card required</span>
-                  </div>
-                </div>
-                {/* Logo Cloud */}
-                <div className="mt-8">
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Trusted by sellers from:</p>
-                  
-                </div>
-              </div>
-              <div className="relative hidden lg:block" aria-hidden="true">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-secondary/30 rounded-3xl blur-3xl" />
-                <div className="relative rounded-3xl bg-white/80 p-8 shadow-xl backdrop-blur dark:bg-gray-900/80">
-                  <LazyLoadImage
-                    alt="PoshAuto dashboard preview showing automation features and analytics"
-                    src="/dashboard-preview.png"
-                    effect="blur"
-                    className="aspect-[4/3] rounded-2xl w-full h-full object-cover"
-                    wrapperClassName="aspect-[4/3] rounded-2xl bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
+          <section
+  className="relative flex flex-col items-center justify-center min-h-[90vh] w-full px-4 py-32 overflow-hidden bg-[#18181b]"
+  aria-labelledby="hero-heading"
+>
+  {/* Animated SVG Orb */}
+  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none select-none">
+    <svg
+      width="900"
+      height="900"
+      viewBox="0 0 900 900"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="animate-orb-spin"
+      aria-hidden="true"
+      style={{ filter: "blur(32px)", opacity: 0.85 }}
+    >
+      <defs>
+        <radialGradient id="orbGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+          <stop offset="0%" stopColor="#a78bfa" stopOpacity="1" />
+          <stop offset="40%" stopColor="#6366f1" stopOpacity="0.7" />
+          <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#18181b" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="orbStroke" x1="0" y1="0" x2="900" y2="900" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#f472b6" />
+          <stop offset="1" stopColor="#818cf8" />
+        </linearGradient>
+      </defs>
+      <ellipse
+        cx="450"
+        cy="450"
+        rx="340"
+        ry="340"
+        fill="url(#orbGradient)"
+        stroke="url(#orbStroke)"
+        strokeWidth="8"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="0 450 450"
+          to="360 450 450"
+          dur="22s"
+          repeatCount="indefinite"
+        />
+      </ellipse>
+    </svg>
+  </div>
+  {/* Main Content */}
+  <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-3xl mx-auto">
+    <h1
+      id="hero-heading"
+      className="text-[2.8rem] sm:text-6xl md:text-7xl font-black leading-[1.1] tracking-tight text-white mb-6"
+      style={{ fontFamily: 'Inter, Satoshi, sans-serif' }}
+    >
+      <span className="inline-block relative">
+        <span className="pr-2">The new standard for</span>
+        <span
+          className="inline-block bg-gradient-to-r from-[#a78bfa] via-[#818cf8] to-[#06b6d4] bg-clip-text text-transparent animate-gradient-move"
+          style={{ backgroundSize: '200% 200%' }}
+        >
+          Poshmark Automation
+        </span>
+      </span>
+    </h1>
+    <h2 className="text-2xl sm:text-3xl font-semibold text-[#A1A1AA] mb-8" style={{letterSpacing: '-0.01em'}}>
+      Automation Platform for Poshmark
+    </h2>
+    <p className="text-lg sm:text-2xl text-[#A1A1AA] mb-10 max-w-xl mx-auto">
+      Automate, organize, and scale your Poshmark business with beautiful, fast, and reliable tools. Experience the future of social selling.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+      <Button
+        size="lg"
+        className="relative px-10 py-4 text-xl font-bold rounded-full shadow-xl bg-gradient-to-r from-[#818cf8] via-[#a78bfa] to-[#06b6d4] text-white border-2 border-transparent hover:from-[#a78bfa] hover:to-[#818cf8] hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-[#818cf8] transition-all duration-200 animate-glow"
+        asChild
+      >
+        <a href="/#pricing" aria-label="Start your free trial now">
+          Start Free Trial
+        </a>
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        className="relative px-8 py-4 text-xl font-semibold rounded-full border-2 border-[#818cf8] text-white hover:bg-[#818cf8]/10 hover:scale-105 transition-transform duration-200"
+        onClick={handleDemoVideoClick}
+      >
+        <span className="flex items-center gap-2">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" stroke="url(#demo-play)" strokeWidth="2"/><polygon points="10,8 16,12 10,16" fill="url(#demo-play)"/><defs><linearGradient id="demo-play" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop stopColor="#a78bfa"/><stop offset="1" stopColor="#06b6d4"/></linearGradient></defs></svg>
+          Watch Demo
+        </span>
+      </Button>
+    </div>
+    <p className="text-base text-[#71717A]">
+      No credit card required. Cancel anytime.
+    </p>
+  </div>
+</section>
+
+
           {/* Features Section */}
           <section className="container mx-auto px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="features-heading">
             <div className="max-w-2xl mx-auto text-center mb-12">

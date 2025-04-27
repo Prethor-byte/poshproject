@@ -1,219 +1,106 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ThemeSwitch } from "@/components/ui/theme-switch";
-import { Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-import { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
 
-export function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const navLinks = [
+  { href: "/features", label: "Features" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
+  { href: "/support", label: "Support" },
+];
+
+const Navbar = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-   
-
-  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-primary via-pink-400 to-secondary shadow-lg border-b border-primary/40 transition-shadow">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8" aria-label="Main navigation">
-        {/* Left: Logo */}
-        <div className="flex items-center flex-shrink-0">
-          <button
-            type="button"
-            className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md group"
-            aria-label="Homepage"
-            onClick={() => {
-              if (location.pathname === "/") {
-                const top = document.getElementById("top");
-                if (top) top.scrollIntoView({ behavior: "smooth" });
-                else window.scrollTo({ top: 0, behavior: "smooth" });
-              } else {
-                window.location.href = "/";
-              }
-            }}
-          >
-            <img src="/logo.svg" alt="PoshAuto Logo" className="h-7 w-7" />
-            <span className="text-2xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight group-hover:text-primary transition-colors">PoshAuto</span>
-          </button>
-        </div>
-        {/* Center: Desktop Navigation */}
-        <div className="hidden flex-1 items-center justify-center space-x-4 lg:flex">
-          {[
-            { label: 'Pricing', to: '#pricing', isScroll: true },
-            { label: 'Features', to: '/features' },
-            { label: 'Blog', to: '/blog' },
-            { label: 'Support', to: '/support' },
-          ].map((item) => (
-            item.isScroll ? (
-              <button
-                key={item.label}
-                onClick={() => {
-                  if (location.pathname === "/") {
-                    const pricing = document.getElementById("pricing");
-                    if (pricing) pricing.scrollIntoView({ behavior: "smooth" });
-                  } else {
-                    window.location.href = "/#pricing";
-                  }
-                }}
-                className={cn(
-                  'text-base font-medium transition-colors px-2 py-1 rounded hover:bg-gradient-to-r hover:from-primary/20 hover:to-secondary/20',
-                  'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50'
-                )}
-                aria-label={item.label}
-              >
-                {item.label}
-              </button>
-            ) : (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  'text-base font-medium transition-colors px-2 py-1 rounded hover:bg-gradient-to-r hover:from-primary/20 hover:to-secondary/20',
-                  isActive(item.to)
-                    ? 'text-primary underline underline-offset-4'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50'
-                )}
-                aria-current={isActive(item.to) ? 'page' : undefined}
-              >
-                {item.label}
-              </Link>
-            )
-          ))}
-        </div>
-        {/* Right: Actions (Desktop) */}
-        <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
-          <div className="rounded-full border-2 border-secondary bg-white/80 dark:bg-black/60 shadow-md p-2 hover:scale-110 transition-transform duration-200">
-            <ThemeSwitch />
-          </div>
+    <header className="fixed top-0 left-0 w-full z-40">
+      <nav
+        className="glass shadow-lg backdrop-blur-lg bg-white/70 dark:bg-gray-900/70 border-b border-gray-100 dark:border-gray-800 transition-all duration-300"
+        style={{ WebkitBackdropFilter: "blur(12px) saturate(1.2)" }}
+      >
+        <div className="container mx-auto flex items-center justify-between py-4 px-4">
           <Link
-            to="/login"
-            className="text-base font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary"
-            aria-label="Sign in to your account"
+            to="/"
+            className="text-3xl font-extrabold tracking-tight flex items-center gap-2"
+            style={{ color: "var(--color-primary)" }}
           >
-            Sign In
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="inline-block mr-2"><circle cx="16" cy="16" r="16" fill="url(#a)"/><defs><linearGradient id="a" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stopColor="#7c3aed"/><stop offset="1" stopColor="#f472b6"/></linearGradient></defs></svg>
+            PoshAuto
           </Link>
-          <Link to="/register" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md" aria-label="Create a new account">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-6 py-2 shadow-md hover:from-primary/80 hover:to-secondary/80 transition-colors">Sign Up</Button>
-          </Link>
-        </div>
-        {/* Right: Menu Button (Mobile) */}
-        <div className="flex items-center gap-2 lg:hidden flex-shrink-0">
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-8">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`relative px-2 py-1 text-base font-semibold transition-colors duration-200 text-gray-800 dark:text-gray-100 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-lg ${
+                  location.pathname === link.href.split("#")[0] ? "text-primary" : ""
+                }`}
+              >
+                {link.label}
+                <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-gradient-to-r from-primary to-accent rounded-full scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              </a>
+            ))}
+            <Button asChild size="lg" className="ml-2 px-6 py-2 text-base shadow-xl bg-gradient-to-r from-primary to-accent text-white">
+              <a href="/#pricing">Start Free Trial</a>
+            </Button>
+          </div>
+          {/* Mobile Hamburger */}
           <button
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label="Open menu"
-            aria-controls="mobile-menu"
-            aria-expanded={isMenuOpen}
+            className="md:hidden flex items-center justify-center p-2 rounded-lg border border-transparent hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Open navigation menu"
+            onClick={() => setMenuOpen((v) => !v)}
           >
-            <Menu className="h-6 w-6" />
+            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+              <line x1="4" y1="7" x2="24" y2="7" />
+              <line x1="4" y1="14" x2="24" y2="14" />
+              <line x1="4" y1="21" x2="24" y2="21" />
+            </svg>
           </button>
         </div>
-      </nav>
-      {/* Mobile Drawer Menu */}
-      <Transition.Root show={isMenuOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-[100]" onClose={setIsMenuOpen}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100"
-            leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" aria-hidden="true" onClick={() => setIsMenuOpen(false)} />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-hidden">
-            <div className="absolute inset-0 overflow-hidden">
-              <Transition.Child
-                as={Fragment}
-                enter="transform transition ease-in-out duration-300"
-                enterFrom="translate-x-full"
-                enterTo="translate-x-0"
-                leave="transform transition ease-in-out duration-200"
-                leaveFrom="translate-x-0"
-                leaveTo="translate-x-full"
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-white/95 dark:bg-gray-900/95 px-6 pb-6 pt-2 shadow-xl border-b border-primary animate-fade-in-down">
+            <div className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={`text-lg font-semibold py-2 px-2 rounded-lg transition-colors duration-200 text-gray-800 dark:text-gray-100 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-lg ${
+                    location.pathname === link.href.split("#")[0] ? "text-primary" : ""
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <Button asChild size="lg" className="mt-2 px-6 py-2 text-base shadow-xl bg-gradient-to-r from-primary to-accent text-white">
+                <a href="/#pricing">Start Free Trial</a>
+              </Button>
+              <Link
+                to="/login"
+                className="text-base font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary"
+                aria-label="Sign in to your account"
               >
-                <Dialog.Panel className="absolute right-0 top-0 h-full w-80 max-w-full bg-white dark:bg-gray-950 shadow-xl rounded-l-2xl flex flex-col focus:outline-none">
-                  {/* Top bar in Drawer */}
-                  <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800">
-                    <div className="rounded-full border-2 border-secondary bg-white/80 dark:bg-black/60 shadow-md p-2">
-                      <ThemeSwitch />
-                    </div>
-                    <button
-                      onClick={() => setIsMenuOpen(false)}
-                      className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      aria-label="Close menu"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-                  {/* Nav Links */}
-                  <div className="flex flex-col gap-2 px-4 py-6 flex-1">
-                    {[
-                      { label: 'Pricing', to: '#pricing', isScroll: true },
-                      { label: 'Features', to: '/features' },
-                      { label: 'Blog', to: '/blog' },
-                      { label: 'Support', to: '/support' },
-                    ].map((item) => (
-                      item.isScroll ? (
-                        <button
-                          key={item.label}
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            if (location.pathname === "/") {
-                              const pricing = document.getElementById("pricing");
-                              if (pricing) pricing.scrollIntoView({ behavior: "smooth" });
-                            } else {
-                              window.location.href = "/#pricing";
-                            }
-                          }}
-                          className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-400 hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10 hover:text-primary rounded"
-                          aria-label={item.label}
-                        >
-                          {item.label}
-                        </button>
-                      ) : (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={cn(
-                            'block px-3 py-2 text-base font-medium rounded',
-                            isActive(item.to)
-                              ? 'text-primary bg-primary/10 dark:bg-primary/20 underline underline-offset-4'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10 hover:text-primary'
-                          )}
-                          aria-current={isActive(item.to) ? 'page' : undefined}
-                        >
-                          {item.label}
-                        </Link>
-                      )
-                    ))}
-                  </div>
-                  {/* Bottom: Actions */}
-                  <div className="flex flex-col gap-3 px-4 pb-6 border-t border-gray-200 dark:border-gray-800">
-                    <Link
-                      to="/login"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="text-base font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary"
-                      aria-label="Sign in to your account"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/register"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md"
-                      aria-label="Create a new account"
-                    >
-                      <Button size="lg" className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold px-6 py-2 shadow-md hover:from-primary/80 hover:to-secondary/80 transition-colors">Sign Up</Button>
-                    </Link>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md"
+                aria-label="Create a new account"
+              >
+                <Button size="lg" className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold px-6 py-2 shadow-md hover:from-primary/80 hover:to-secondary/80 transition-colors">Sign Up</Button>
+              </Link>
             </div>
           </div>
-        </Dialog>
-      </Transition.Root>
+        )}
+      </nav>
     </header>
   );
-}
+};
+
+export default Navbar;
+export { Navbar };
+
